@@ -1,0 +1,22 @@
+Release/
+Release+Asserts/
+Debug/
+Debug+Asserts/
+Output/
+klee-out*/
+
+cscope.*
+
+*.log
+*.sum
+*.out
+*.status
+*.ktest
+
+*.config
+
+config.h
+site.exp
+
+# Site file for llvm-lit
+lit.site.cfg
