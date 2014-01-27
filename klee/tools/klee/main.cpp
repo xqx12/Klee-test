@@ -1160,6 +1160,8 @@ int main(int argc, char **argv, char **envp) {
   STPLOG_init("stplog.c");
 #endif
 
+  klee_message("[xqx]klee main : ");
+
   atexit(llvm_shutdown);  // Call llvm_shutdown() on exit.
 
   llvm::InitializeNativeTarget();
