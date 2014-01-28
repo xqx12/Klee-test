@@ -1,0 +1,149 @@
+ktest file : './klee-last/test000001.ktest'
+args       : ['bench_test.o', '3', 'aaaa']
+num objects: 2
+object    0: name: 'model_version'
+object    0: size: 4
+object    0: data: '\x01\x00\x00\x00'
+object    1: name: 'argv2'
+object    1: size: 16
+object    1: data: '0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+()
+ktest file : './klee-last/test000002.ktest'
+args       : ['bench_test.o', '3', 'aaaa']
+num objects: 2
+object    0: name: 'model_version'
+object    0: size: 4
+object    0: data: '\x01\x00\x00\x00'
+object    1: name: 'argv2'
+object    1: size: 16
+object    1: data: '\xc50\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+()
+ktest file : './klee-last/test000003.ktest'
+args       : ['bench_test.o', '3', 'aaaa']
+num objects: 2
+object    0: name: 'model_version'
+object    0: size: 4
+object    0: data: '\x01\x00\x00\x00'
+object    1: name: 'argv2'
+object    1: size: 16
+object    1: data: '*0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+()
+ktest file : './klee-last/test000004.ktest'
+args       : ['bench_test.o', '3', 'aaaa']
+num objects: 2
+object    0: name: 'model_version'
+object    0: size: 4
+object    0: data: '\x01\x00\x00\x00'
+object    1: name: 'argv2'
+object    1: size: 16
+object    1: data: '\xc5\xc50\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+()
+ktest file : './klee-last/test000005.ktest'
+args       : ['bench_test.o', '3', 'aaaa']
+num objects: 2
+object    0: name: 'model_version'
+object    0: size: 4
+object    0: data: '\x01\x00\x00\x00'
+object    1: name: 'argv2'
+object    1: size: 16
+object    1: data: '*\xc50\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+()
+ktest file : './klee-last/test000006.ktest'
+args       : ['bench_test.o', '3', 'aaaa']
+num objects: 2
+object    0: name: 'model_version'
+object    0: size: 4
+object    0: data: '\x01\x00\x00\x00'
+object    1: name: 'argv2'
+object    1: size: 16
+object    1: data: '\xc5*0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+()
+ktest file : './klee-last/test000007.ktest'
+args       : ['bench_test.o', '3', 'aaaa']
+num objects: 2
+object    0: name: 'model_version'
+object    0: size: 4
+object    0: data: '\x01\x00\x00\x00'
+object    1: name: 'argv2'
+object    1: size: 16
+object    1: data: '**0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+()
+ktest file : './klee-last/test000008.ktest'
+args       : ['bench_test.o', '3', 'aaaa']
+num objects: 2
+object    0: name: 'model_version'
+object    0: size: 4
+object    0: data: '\x01\x00\x00\x00'
+object    1: name: 'argv2'
+object    1: size: 16
+object    1: data: '*\xc5*\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+()
+ktest file : './klee-last/test000009.ktest'
+args       : ['bench_test.o', '3', 'aaaa']
+num objects: 2
+object    0: name: 'model_version'
+object    0: size: 4
+object    0: data: '\x01\x00\x00\x00'
+object    1: name: 'argv2'
+object    1: size: 16
+object    1: data: '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+()
+ktest file : './klee-last/test000010.ktest'
+args       : ['bench_test.o', '3', 'aaaa']
+num objects: 2
+object    0: name: 'model_version'
+object    0: size: 4
+object    0: data: '\x01\x00\x00\x00'
+object    1: name: 'argv2'
+object    1: size: 16
+object    1: data: '\xc5\xc5*\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+()
+ktest file : './klee-last/test000011.ktest'
+args       : ['bench_test.o', '3', 'aaaa']
+num objects: 2
+object    0: name: 'model_version'
+object    0: size: 4
+object    0: data: '\x01\x00\x00\x00'
+object    1: name: 'argv2'
+object    1: size: 16
+object    1: data: '\xc5*\xc5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+()
+ktest file : './klee-last/test000012.ktest'
+args       : ['bench_test.o', '3', 'aaaa']
+num objects: 2
+object    0: name: 'model_version'
+object    0: size: 4
+object    0: data: '\x01\x00\x00\x00'
+object    1: name: 'argv2'
+object    1: size: 16
+object    1: data: '**\xc5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+()
+ktest file : './klee-last/test000013.ktest'
+args       : ['bench_test.o', '3', 'aaaa']
+num objects: 2
+object    0: name: 'model_version'
+object    0: size: 4
+object    0: data: '\x01\x00\x00\x00'
+object    1: name: 'argv2'
+object    1: size: 16
+object    1: data: '*\xc5\xc5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+()
+ktest file : './klee-last/test000014.ktest'
+args       : ['bench_test.o', '3', 'aaaa']
+num objects: 2
+object    0: name: 'model_version'
+object    0: size: 4
+object    0: data: '\x01\x00\x00\x00'
+object    1: name: 'argv2'
+object    1: size: 16
+object    1: data: '\xc5**\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+()
+ktest file : './klee-last/test000015.ktest'
+args       : ['bench_test.o', '3', 'aaaa']
+num objects: 2
+object    0: name: 'model_version'
+object    0: size: 4
+object    0: data: '\x01\x00\x00\x00'
+object    1: name: 'argv2'
+object    1: size: 16
+object    1: data: '***\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
