@@ -4,6 +4,7 @@ Debug/
 Debug+Asserts/
 Output/
 klee-out*/
+doxygen/
 
 cscope.*
 
