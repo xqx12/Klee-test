@@ -78,7 +78,7 @@ export C_INCLUDE_PATH=/usr/include/x86_64-linux-gnu
 git clone https://github.com/ccadar/klee.git
 cd klee
 ./configure --with-llvm=../llvm-2.9 --with-stp=../stp-r940/install --with-uclibc=../klee-uclibc --enable-posix-runtime \
-&& make ENABLE_OPTIMIZED=1 -j `grep -c processor /proc/cpuinfo`
+# && make ENABLE_OPTIMIZED=1 -j `grep -c processor /proc/cpuinfo`
 make #upline cmd may fail
 if [ $? != 0 ]
 then
