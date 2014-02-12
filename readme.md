@@ -36,3 +36,7 @@ copy the install script from xyj
 	2. report.sh
 		
 		usage : report.sh dir(klee-last) binary(which to be replay) 
+        #Usage: ./report.sh dir bin "gcov|lcov"
+        #       dir is the klee-out-x , default is klee-last
+        #       bin : the binary will to replay, patten is bin.out
+        #       gcov or lcov : to report coverage by gcov or lcov

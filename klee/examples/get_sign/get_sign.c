@@ -14,8 +14,10 @@ int get_sign(int x) {
      return 1;
 } 
 
-int main() {
+int main(int argc, char *argv[]) {
   int a;
-  klee_make_symbolic(&a, sizeof(a), "a");
+  if(argc < 2) return 0;
+  a = atoi(argv[1]);
+  /*klee_make_symbolic(&a, sizeof(a), "a");*/
   return get_sign(a);
 } 

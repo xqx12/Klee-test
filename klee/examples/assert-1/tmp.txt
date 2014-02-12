@@ -1,0 +1,427 @@
+==========bug info =================
+Error: external call with symbolic argument: printf
+Stack: 
+	#0 00000000 in __user_main (argc=5, argv=55516784)
+	#1 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#2 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000001.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '-(\x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: '  \x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000001.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "-(" "  " 
+unknow option：(
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+------------------------------------
+==========bug info =================
+Error: external call with symbolic argument: printf
+Stack: 
+	#0 00000000 in __user_main (argc=5, argv=55516784)
+	#1 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#2 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000002.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '2 \x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: '-(\x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000002.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "2 " "-(" 
+unknow option：(
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+------------------------------------
+==========bug info =================
+Error: external call with symbolic argument: printf
+Stack: 
+	#0 00000000 in __user_main (argc=5, argv=55516784)
+	#1 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#2 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000003.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '-\x00\x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: '-(\x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000003.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "-" "-(" 
+unknow option：(
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+------------------------------------
+==========bug info =================
+Error: ASSERTION FAIL: a == 2*b
+Stack: 
+	#0 00000000 in checkValidRange (a=20, b)
+	#1 00000000 in __user_main (argc=5, argv=55516784)
+	#2 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#3 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000004.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '-t\x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: '6 \x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000004.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "-t" "6 " 
+test.o: test.c:28: checkValidRange: Assertion `a == 2*b' failed.
+option:t = 6 
+klee-replay: EXIT STATUS: CRASHED signal 6 (0 seconds)
+------------------------------------
+==========bug info =================
+Error: ASSERTION FAIL: a == 2*b
+Stack: 
+	#0 00000000 in checkValidRange (a=20, b)
+	#1 00000000 in __user_main (argc=5, argv=55516784)
+	#2 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#3 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000005.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '-t\x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: '`_\x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000005.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "-t" "`_" 
+option:t = `_
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+------------------------------------
+==========bug info =================
+Error: ASSERTION FAIL: a == 2*b
+Stack: 
+	#0 00000000 in checkValidRange (a=20, b)
+	#1 00000000 in __user_main (argc=5, argv=55516784)
+	#2 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#3 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000006.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '-t\x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: '` \x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000006.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "-t" "` " 
+option:t = ` 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+------------------------------------
+==========bug info =================
+Error: ASSERTION FAIL: a == 2*b
+Stack: 
+	#0 00000000 in checkValidRange (a=20, b)
+	#1 00000000 in __user_main (argc=5, argv=55516784)
+	#2 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#3 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000007.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '-t\x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: '6_\x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000007.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "-t" "6_" 
+test.o: test.c:28: checkValidRange: Assertion `a == 2*b' failed.
+option:t = 6_
+klee-replay: EXIT STATUS: CRASHED signal 6 (0 seconds)
+------------------------------------
+==========bug info =================
+Error: ASSERTION FAIL: a == 2*b
+Stack: 
+	#0 00000000 in checkValidRange (a=20, b)
+	#1 00000000 in __user_main (argc=5, argv=55516784)
+	#2 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#3 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000008.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '-t\x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: '+`\x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000008.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "-t" "+`" 
+option:t = +`
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+------------------------------------
+==========bug info =================
+Error: ASSERTION FAIL: a == 2*b
+Stack: 
+	#0 00000000 in checkValidRange (a=20, b)
+	#1 00000000 in __user_main (argc=5, argv=55516784)
+	#2 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#3 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000009.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '-t\x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: '+1\x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000009.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "-t" "+1" 
+test.o: test.c:28: checkValidRange: Assertion `a == 2*b' failed.
+option:t = +1
+klee-replay: EXIT STATUS: CRASHED signal 6 (0 seconds)
+------------------------------------
+==========bug info =================
+Error: ASSERTION FAIL: a == 2*b
+Stack: 
+	#0 00000000 in checkValidRange (a=20, b)
+	#1 00000000 in __user_main (argc=5, argv=55516784)
+	#2 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#3 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000010.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '-t\x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: '17\x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000010.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "-t" "17" 
+test.o: test.c:28: checkValidRange: Assertion `a == 2*b' failed.
+option:t = 17
+klee-replay: EXIT STATUS: CRASHED signal 6 (0 seconds)
+------------------------------------
+==========bug info =================
+Error: ASSERTION FAIL: a == 2*b
+Stack: 
+	#0 00000000 in checkValidRange (a=20, b)
+	#1 00000000 in __user_main (argc=5, argv=55516784)
+	#2 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#3 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000011.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '-t\x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: ' 9\x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000011.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "-t" " 9" 
+test.o: test.c:28: checkValidRange: Assertion `a == 2*b' failed.
+option:t =  9
+klee-replay: EXIT STATUS: CRASHED signal 6 (0 seconds)
+------------------------------------
+==========bug info =================
+Error: ASSERTION FAIL: a == 2*b
+Stack: 
+	#0 00000000 in checkValidRange (a=20, b)
+	#1 00000000 in __user_main (argc=5, argv=55516784)
+	#2 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#3 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000012.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '-t\x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: ' `\x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000012.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "-t" " `" 
+option:t =  `
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+------------------------------------
+==========bug info =================
+Error: ASSERTION FAIL: a == 2*b
+Stack: 
+	#0 00000000 in checkValidRange (a=20, b)
+	#1 00000000 in __user_main (argc=5, argv=55516784)
+	#2 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#3 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000013.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '-t\x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: '1`\x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000013.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "-t" "1`" 
+test.o: test.c:28: checkValidRange: Assertion `a == 2*b' failed.
+option:t = 1`
+klee-replay: EXIT STATUS: CRASHED signal 6 (0 seconds)
+------------------------------------
+==========bug info =================
+Error: external call with symbolic argument: printf
+Stack: 
+	#0 00000000 in __user_main (argc=5, argv=55516784)
+	#1 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#2 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000014.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '-:\x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: '-(\x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000014.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "-:" "-(" 
+unknow option：:
+unknow option：(
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+------------------------------------
+==========bug info =================
+Error: external call with symbolic argument: printf
+Stack: 
+	#0 00000000 in __user_main (argc=5, argv=55516784)
+	#1 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#2 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000015.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '-g\x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: '-(\x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000015.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "-g" "-(" 
+unknow option：(
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+------------------------------------
+==========bug info =================
+Error: external call with symbolic argument: printf
+Stack: 
+	#0 00000000 in __user_main (argc=5, argv=55516784)
+	#1 00001109 in __uClibc_main (main=43942560, argc=5, argv=55516784, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/projects/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#2 00000000 in main (=5, =55516784)
+==========testcase =================
+ktest file : 'test000016.ktest'
+args       : ['test.bc', '--sym-args', '2', '2', '2']
+num objects: 3
+object    0: name: 'arg0'
+object    0: size: 3
+object    0: data: '-v\x00'
+object    1: name: 'arg1'
+object    1: size: 3
+object    1: data: '-(\x00'
+object    2: name: 'model_version'
+object    2: size: 4
+object    2: data: '\x01\x00\x00\x00'
+==========replay =================
+klee-replay: TEST CASE: test000016.ktest
+klee-replay: ARGS: "/home/xqx/projects/klee-test/klee/examples/assert-1/test.o" "-v" "-(" 
+unknow option：(
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+------------------------------------

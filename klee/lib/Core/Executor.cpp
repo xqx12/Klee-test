@@ -1418,6 +1418,10 @@ static inline const llvm::fltSemantics * fpWidthToSemantics(unsigned width) {
 
 void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
   Instruction *i = ki->inst;
+  //klee_message("[xqx]===exec inst=================");
+  //i->dump();
+  //klee_message("[xqx]=============================\n");
+
   switch (i->getOpcode()) {
     // Control flow
   case Instruction::Ret: {
@@ -1952,6 +1956,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
     // Memory instructions...
   case Instruction::Alloca: {
     AllocaInst *ai = cast<AllocaInst>(i);
+	klee_message("[xqx]===exec inst=================");
+	i->dump();
+	Function *TmpF = i->getParent()->getParent();
+	klee_message("Func: %s", TmpF->getName());
+	klee_message("[xqx]=============================\n");
     unsigned elementSize = 
       kmodule->targetData->getTypeStoreSize(ai->getAllocatedType());
     ref<Expr> size = Expr::createPointer(elementSize);
@@ -3042,6 +3051,17 @@ void Executor::executeAlloc(ExecutionState &state,
           ExprPPrinter::printOne(info, "  size expr", size);
           info << "  concretization : " << example << "\n";
           info << "  unbound example: " << tmp << "\n";
+		  //addbyxqx201402
+		  klee_message("[xqx]===exec inst in executeAlloc=================");
+		  const std::string tmp = info.str();
+		  const char* cstr = tmp.c_str();
+		  Instruction *i = target->inst;
+		  i->dump();
+		  Function *TmpF = i->getParent()->getParent();
+		  klee_message("Func: %s", TmpF->getName());
+		  klee_message("Alloc size: %s", cstr);
+		  klee_message("[xqx]============================================\n");
+
           terminateStateOnError(*hugeSize.second, 
                                 "concretized symbolic size", 
                                 "model.err", 
