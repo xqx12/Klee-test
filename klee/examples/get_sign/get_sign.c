@@ -4,14 +4,24 @@
 
 //#include <klee/klee.h>
 
+#include	<stdlib.h>
+
+char *buf;
+
 int get_sign(int x) {
   if (x == 0)
-     return 0;
+    goto exit; // return 0;
   
   if (x < 0)
      return -1;
   else 
-     return 1;
+  {
+	 buf = (char *)malloc(x);
+	 /*return 1;*/
+  }
+exit:
+	 free(buf);
+	 return 0;
 } 
 
 int main(int argc, char *argv[]) {

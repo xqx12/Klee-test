@@ -394,6 +394,9 @@ private:
   void processTimers(ExecutionState *current,
                      double maxInstTime);
                 
+  bool doSizeControlledMalloc(ExecutionState &state,
+		  KInstruction *target,
+		  ref<Expr> size	);
 public:
   Executor(const InterpreterOptions &opts, InterpreterHandler *ie);
   virtual ~Executor();

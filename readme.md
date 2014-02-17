@@ -40,3 +40,8 @@ copy the install script from xyj
         #       dir is the klee-out-x , default is klee-last
         #       bin : the binary will to replay, patten is bin.out
         #       gcov or lcov : to report coverage by gcov or lcov
+	
+
+*** a NEW BUG found unexpected ***
+
+	cut -c333333333333

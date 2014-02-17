@@ -1037,6 +1037,7 @@ static llvm::Module *linkWithUclibc(llvm::Module *mainModule, llvm::sys::Path li
 
     bool uclibcExists=false;
     llvm::sys::fs::exists(uclibcBCA.c_str(), uclibcExists);
+    klee_message("[xqx]uclibc: %s ",uclibcBCA.c_str());
     if (!uclibcExists)
         klee_error("Cannot find klee-uclibc : %s", uclibcBCA.c_str());
 
@@ -1334,6 +1335,7 @@ int main(int argc, char **argv, char **envp) {
 
     pArgc = InputArgv.size() + 1; 
     pArgv = new char *[pArgc];
+	klee_message("[xqx]klee main args: =======================");
     for (unsigned i=0; i<InputArgv.size()+1; i++) {
         std::string &arg = (i==0 ? InputFile : InputArgv[i-1]);
         unsigned size = arg.size() + 1;
@@ -1343,7 +1345,10 @@ int main(int argc, char **argv, char **envp) {
         pArg[size - 1] = 0;
 
         pArgv[i] = pArg;
+
+		klee_message("[xqx] pArgv[%d]: %s ", i , pArgv[i]);
     }
+	klee_message("[xqx]klee main args: -----------------------");
 
     std::vector<bool> replayPath;
 

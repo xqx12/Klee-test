@@ -10,15 +10,15 @@ GCCOBJECTS := $(patsubst %.c, %.out,  ${CFILES})
 
 
 all: 
-	$(LLVMGCC) --emit-llvm -c ${CFILES} 
-	gcc ${CFILES} -o ${GCCOBJECTS}
+	$(LLVMGCC) -g --emit-llvm -c ${CFILES} 
+	gcc ${CFILES} -g -o ${GCCOBJECTS}
 #	klee --libc=uclibc -posix-runtime --emit-all-errors bench_test.o --sym-args 2 2 5
-	$(KLEE) --libc=uclibc -posix-runtime --emit-all-errors ${OBJECTS} --sym-args 1 1 1
+	$(KLEE) -write-paths -write-sym-paths -use-call-paths  --libc=uclibc -posix-runtime --emit-all-errors ${OBJECTS} --sym-args 1 1 1  1> klee.log 2>&1 && vim klee.log
 	
 gcov:
 	$(LLVMGCC) --emit-llvm -c ${CFILES} 
 	gcc ${CFILES} -g -fprofile-arcs -ftest-coverage -o ${GCCOBJECTS}
-	$(KLEE) --libc=uclibc -posix-runtime --emit-all-errors ${OBJECTS} --sym-args 1 1 1
+	$(KLEE) --libc=uclibc -posix-runtime --emit-all-errors ${OBJECTS} --sym-args 1 1 2
 
 
 m32: 
@@ -28,7 +28,7 @@ m32:
 	$(KLEE) --libc=uclibc -posix-runtime --emit-all-errors ${OBJECTS} --sym-args 1 1 1
 
 clean:
-	rm -rf *.o
+	rm -rf *.o *.out
+	rm -rf *.gc* *.info *.log
 	rm -rf klee-* 
-	rm -rf *.out *.gc* *.info
 	rm -rf html
