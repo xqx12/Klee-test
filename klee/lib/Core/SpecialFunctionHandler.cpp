@@ -364,6 +364,11 @@ void SpecialFunctionHandler::handleMalloc(ExecutionState &state,
                                   std::vector<ref<Expr> > &arguments) {
   // XXX should type check args
   assert(arguments.size()==1 && "invalid number of arguments to malloc");
+  executor.executeAlloc(state, arguments[0], false, target);
+
+#if 0
+  //test byxqx
+  assert(arguments.size()==1 && "invalid number of arguments to malloc");
   klee_message("[xqx]: handleMalloc***");
 
   ref<Expr> e = arguments[0];
@@ -381,7 +386,7 @@ void SpecialFunctionHandler::handleMalloc(ExecutionState &state,
 
   klee_message("[xqx]: SMTSolverTest in handMalloc====================");
 
-  e = EqExpr::create(e, ConstantExpr::create(1, e->getWidth()));
+  e = EqExpr::create(e, ConstantExpr::create(0, e->getWidth()));
   e->dump();
   bool res;
   bool success = executor.solver->mustBeFalse(state, e, res);
@@ -409,11 +414,12 @@ void SpecialFunctionHandler::handleMalloc(ExecutionState &state,
 			  "zero-malloc.err");
   } 
   else {
-	  executor.addConstraint(state, e);
+	  //executor.addConstraint(state, e);
 	  executor.executeAlloc(state, arguments[0], false, target);
   }
 
   klee_message("[xqx]: handleMalloc--------------------");
+#endif
 }
 
 void SpecialFunctionHandler::handleAssume(ExecutionState &state,

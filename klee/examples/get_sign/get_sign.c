@@ -16,7 +16,7 @@ int get_sign(int x) {
      return -1;
   else 
   {
-	 buf = (char *)malloc(x);
+	 buf = (char *)malloc(x-10);
 	 /*return 1;*/
   }
 exit:

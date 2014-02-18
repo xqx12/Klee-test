@@ -3144,8 +3144,8 @@ void Executor::executeAlloc(ExecutionState &state,
 		//      and terminateState
 		//  Copyright: addbyxqx 2014年02月17日 15时24分26秒
 		//
-		//if ( doSizeControlledMalloc(state, target, size) )
-			//return;
+		if ( doSizeControlledMalloc(state, target, size) )
+			return;
 		
 		// XXX For now we just pick a size. Ideally we would support
 		// symbolic sizes fully but even if we don't it would be better to
@@ -3789,7 +3789,7 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 {
 
 	klee_message("[xqx]===doSizeControlledMalloc=================");
-/* 
+ 
 	Instruction *i = target->inst;
 	i->dump();
 	Function *TmpF = i->getParent()->getParent();
@@ -3814,33 +3814,44 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 	//assert(success && "FIXME: Unhandled solver failure");
 	//(void) success;
 	//Expr::Width W = example->getWidth();
-
-	ref<Expr> isZeroSize = NqExpr::create(size, 
+ 
+  
+	ref<Expr> isZeroSize = EqExpr::create(size, 
 			ConstantExpr::create(0,size->getWidth()));
-	ref<ConstantExpr> tmpZeroValue;
+//	ref<ConstantExpr> tmpZeroValue;
 
 	isZeroSize->dump();
 	bool bZero ;
-	bool success = solver->mustBeFalse(state, isZeroSize, bZero );
+	bool success = solver->mayBeTrue(state, isZeroSize, bZero );
 	assert(success && "FIXME: Unhandled solver failure");      
 	(void) success;
 
-	if(!bZero){
-		klee_message( "[xqx] mayBeTrue, NOT be Zero");      
-		return false;
-	}
-
-	addConstraint(state, isZeroSize);
 	std::ostringstream xinfo;
 	ExprPPrinter::printOne(xinfo, "  size expr", size);
 	xinfo << "Stack: \n";
 	state.dumpStack(xinfo);
-	terminateStateOnError(state, 
-			"malloc symbolic size", 
-			"size-controlled-malloc.err", 
-			xinfo.str());
+
+	//FIXME : it will be integer overflow check first
+
+	if(bZero){
+		klee_message( "[xqx] mayBeTrue, may be Zero");      
+		addConstraint(state, isZeroSize);
+		terminateStateOnError(state, 
+				"malloc zero size", 
+				"zero-size-malloc.err", 
+				xinfo.str());
+		return true;
+	}
+	else {
+
+		terminateStateOnError(state, 
+				"malloc symbolic size", 
+				"size-controlled-malloc.err", 
+				xinfo.str());
+	}
+
 	klee_message("[xqx]---doSizeControlledMalloc-----------------");
-*/
+
 	return true;
 
 }
