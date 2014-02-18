@@ -1198,6 +1198,7 @@ void Executor::executeCall(ExecutionState &state,
 		std::vector< ref<Expr> > &arguments) {
 	Instruction *i = ki->inst;
 	if (f && f->isDeclaration()) {
+		klee_message("[xqx]: executeCall which is declaration, func = %s ", f->getName().data());
 		switch(f->getIntrinsicID()) {
 			case Intrinsic::not_intrinsic:
 				// state may be destroyed by this call, cannot touch
@@ -1261,7 +1262,10 @@ void Executor::executeCall(ExecutionState &state,
 
 		if (InvokeInst *ii = dyn_cast<InvokeInst>(i))
 			transferToBasicBlock(ii->getNormalDest(), i->getParent(), state);
-	} else {
+	}
+	else {
+		klee_message("[xqx]: executeCall which is not declaration, func = %s ", f->getName().data());
+
 		// FIXME: I'm not really happy about this reliance on prevPC but it is ok, I
 		// guess. This just done to avoid having to pass KInstIterator everywhere
 		// instead of the actual instruction, since we can't make a KInstIterator
@@ -1278,7 +1282,8 @@ void Executor::executeCall(ExecutionState &state,
 
 		unsigned callingArgs = arguments.size();
 		unsigned funcArgs = f->arg_size();
-		if (!f->isVarArg()) {
+		if (!f->isVarArg()) 
+		{
 			if (callingArgs > funcArgs) {
 				klee_warning_once(f, "calling %s with extra arguments.", 
 						f->getName().data());
@@ -1287,7 +1292,9 @@ void Executor::executeCall(ExecutionState &state,
 						"user.err");
 				return;
 			}
-		} else {
+		} 
+		else 
+		{
 			if (callingArgs < funcArgs) {
 				terminateStateOnError(state, "calling function with too few arguments", 
 						"user.err");
@@ -1333,8 +1340,12 @@ void Executor::executeCall(ExecutionState &state,
 		}
 
 		unsigned numFormals = f->arg_size();
-		for (unsigned i=0; i<numFormals; ++i) 
+		for (unsigned i=0; i<numFormals; ++i) {
 			bindArgument(kf, i, state, arguments[i]);
+			arguments[i]->dump();
+		}
+
+		klee_message("[xqx]: executeCall bindArgument %d args ", numFormals);
 	}
 }
 
@@ -3133,8 +3144,8 @@ void Executor::executeAlloc(ExecutionState &state,
 		//      and terminateState
 		//  Copyright: addbyxqx 2014年02月17日 15时24分26秒
 		//
-		if ( doSizeControlledMalloc(state, target, size) )
-			return;
+		//if ( doSizeControlledMalloc(state, target, size) )
+			//return;
 		
 		// XXX For now we just pick a size. Ideally we would support
 		// symbolic sizes fully but even if we don't it would be better to
@@ -3778,7 +3789,7 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 {
 
 	klee_message("[xqx]===doSizeControlledMalloc=================");
-
+/* 
 	Instruction *i = target->inst;
 	i->dump();
 	Function *TmpF = i->getParent()->getParent();
@@ -3798,23 +3809,26 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 		return false;
 	}
 
-	ref<ConstantExpr> example;
-	bool success = solver->getValue(state, size, example);
-	assert(success && "FIXME: Unhandled solver failure");
-	(void) success;
-	Expr::Width W = example->getWidth();
+	//ref<ConstantExpr> example;
+	//bool success = solver->getValue(state, size, example);
+	//assert(success && "FIXME: Unhandled solver failure");
+	//(void) success;
+	//Expr::Width W = example->getWidth();
 
-	ref<Expr> isZeroSize = EqExpr::create(size, ConstantExpr::create(0,W));
+	ref<Expr> isZeroSize = NqExpr::create(size, 
+			ConstantExpr::create(0,size->getWidth()));
 	ref<ConstantExpr> tmpZeroValue;
 
 	isZeroSize->dump();
 	bool bZero ;
-	success = solver->mayBeTrue(state, isZeroSize, bZero );
+	bool success = solver->mustBeFalse(state, isZeroSize, bZero );
 	assert(success && "FIXME: Unhandled solver failure");      
 	(void) success;
 
-	if(!bZero)
+	if(!bZero){
 		klee_message( "[xqx] mayBeTrue, NOT be Zero");      
+		return false;
+	}
 
 	addConstraint(state, isZeroSize);
 	std::ostringstream xinfo;
@@ -3826,7 +3840,7 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 			"size-controlled-malloc.err", 
 			xinfo.str());
 	klee_message("[xqx]---doSizeControlledMalloc-----------------");
-
+*/
 	return true;
 
 }

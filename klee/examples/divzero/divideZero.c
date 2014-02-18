@@ -14,6 +14,7 @@ int main (int argc, char * argv[])
   klee_make_symbolic(&myInt, sizeof(myInt), "myInt");
 
   myInt = yourInt-1;
+  /*myInt = 2;*/
 
   // this will cause a divide by zero sometimes
   return yourInt/myInt;

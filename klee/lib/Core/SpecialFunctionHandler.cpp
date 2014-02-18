@@ -365,7 +365,55 @@ void SpecialFunctionHandler::handleMalloc(ExecutionState &state,
   // XXX should type check args
   assert(arguments.size()==1 && "invalid number of arguments to malloc");
   klee_message("[xqx]: handleMalloc***");
-  executor.executeAlloc(state, arguments[0], false, target);
+
+  ref<Expr> e = arguments[0];
+  e->dump();
+  if (ConstantExpr *CE = dyn_cast<ConstantExpr>(e)) {
+	  executor.executeAlloc(state, arguments[0], false, target);
+	  return;
+  }
+
+  //if (e->getWidth() != Expr::Bool)
+	  //e = EqExpr::create(e, ConstantExpr::create(0, e->getWidth()));
+  //bool res;
+  //bool success = executor.solver->mustBeFalse(state, e, res);
+  //assert(success && "FIXME: Unhandled solver failure");
+
+  klee_message("[xqx]: SMTSolverTest in handMalloc====================");
+
+  e = EqExpr::create(e, ConstantExpr::create(1, e->getWidth()));
+  e->dump();
+  bool res;
+  bool success = executor.solver->mustBeFalse(state, e, res);
+  assert(success && "FIXME: Unhandled solver failure");
+  klee_message("[xqx]: MustBeFalse is %s" , res == true?"TRUE":"FALSE");
+
+  success = executor.solver->mayBeFalse(state, e, res);
+  assert(success && "FIXME: Unhandled solver failure");
+  klee_message("[xqx]: mayBeFalse is %s" , res == true?"TRUE":"FALSE");
+
+  success = executor.solver->mustBeTrue(state, e, res);
+  assert(success && "FIXME: Unhandled solver failure");
+  klee_message("[xqx]: mustBeTrue is %s" , res == true?"TRUE":"FALSE");
+
+  success = executor.solver->mayBeTrue(state, e, res);
+  assert(success && "FIXME: Unhandled solver failure");
+  klee_message("[xqx]: mayBeTrue is %s" , res == true?"TRUE":"FALSE");
+
+
+  klee_message("[xqx]: SMTSolverTest in handMalloc--------------------");
+
+  if (res) {
+	  executor.terminateStateOnError(state, 
+			  "malloc size could be zero",
+			  "zero-malloc.err");
+  } 
+  else {
+	  executor.addConstraint(state, e);
+	  executor.executeAlloc(state, arguments[0], false, target);
+  }
+
+  klee_message("[xqx]: handleMalloc--------------------");
 }
 
 void SpecialFunctionHandler::handleAssume(ExecutionState &state,

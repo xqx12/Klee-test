@@ -1,0 +1,190 @@
+(Eq false
+    (Eq 0
+        (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0))))))
+KLEE: [xqx]: MustBeFalse is FALSE
+KLEE: [xqx]: mayBeFalse is FALSE
+KLEE: [xqx]: mustBeTrue is TRUE
+KLEE: [xqx]: mayBeTrue is TRUE
+
+================================================================
+(Eq false
+    (Eq 1
+        (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0))))))
+KLEE: [xqx]: MustBeFalse is FALSE
+KLEE: [xqx]: mayBeFalse is TRUE
+KLEE: [xqx]: mustBeTrue is FALSE
+KLEE: [xqx]: mayBeTrue is TRUE
+K
+================================================================
+
+(Eq 1
+    (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0)))))
+KLEE: [xqx]: MustBeFalse is FALSE
+KLEE: [xqx]: mayBeFalse is TRUE
+KLEE: [xqx]: mustBeTrue is FALSE
+KLEE: [xqx]: mayBeTrue is TRUE
+K
+================================================================
+(Eq 0
+    (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0)))))
+KLEE: [xqx]: MustBeFalse is TRUE
+KLEE: [xqx]: mayBeFalse is TRUE
+KLEE: [xqx]: mustBeTrue is FALSE
+KLEE: [xqx]: mayBeTrue is FALSE
+K
+================================================================
+
+KLEE: [xqx]: SMTSolverTest in handMalloc====================
+(Eq 0
+    (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0)))))
+simplifyExpr-----------before
+(Eq false
+    (Eq 0
+        (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0))))))
+simplifyExpr===========after
+true
+KLEE: [xqx]: MustBeFalse is TRUE
+simplifyExpr-----------after
+simplifyExpr-----------before
+(Eq 0
+    (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0)))))
+simplifyExpr===========after
+false
+KLEE: [xqx]: mayBeFalse is TRUE
+simplifyExpr-----------after
+simplifyExpr-----------before
+(Eq 0
+    (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0)))))
+simplifyExpr===========after
+false
+KLEE: [xqx]: mustBeTrue is FALSE
+simplifyExpr-----------after
+simplifyExpr-----------before
+(Eq false
+    (Eq 0
+        (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0))))))
+simplifyExpr===========after
+true
+KLEE: [xqx]: mayBeTrue is FALSE
+KLEE: [xqx]: SMTSolverTest in handMalloc--------------------
+simplifyExpr-----------after
+(Eq 0
+    (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0)))))
+(Eq 0
+    (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0)))))
+simplifyExpr-----------before
+(Eq 0
+    (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0)))))
+simplifyExpr===========after
+false
+klee: Constraints.cpp:142: void klee::ConstraintManager::addConstraintInternal(klee::ref<klee::Expr>): Assertion `cast<ConstantExpr>(e)->isTrue() && "attempt to add invalid (false) constraint"' failed.
+simplifyExpr-----------after
+0
+
+======================================================================
+
+KLEE: [xqx]: SMTSolverTest in handMalloc====================
+(Eq 1
+    (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0)))))
+simplifyExpr-----------before
+(Eq false
+    (Eq 1
+        (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0))))))
+simplifyExpr===========after
+(Eq false
+    (Eq 1
+        (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0))))))
+simplifyExpr-----------after
+KLEE: [xqx]: MustBeFalse is FALSE
+simplifyExpr-----------before
+(Eq 1
+    (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0)))))
+simplifyExpr===========after
+(Eq 1
+    (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0)))))
+KLEE: [xqx]: mayBeFalse is TRUE
+simplifyExpr-----------after
+simplifyExpr-----------before
+(Eq 1
+    (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0)))))
+simplifyExpr===========after
+(Eq 1
+    (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0)))))
+KLEE: [xqx]: mustBeTrue is FALSE
+simplifyExpr-----------after
+simplifyExpr-----------before
+(Eq false
+    (Eq 1
+        (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0))))))
+simplifyExpr===========after
+(Eq false
+    (Eq 1
+        (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0))))))
+KLEE: [xqx]: mayBeTrue is TRUE
+KLEE: [xqx]: SMTSolverTest in handMalloc--------------------
+KLEE: ERROR: /home/xqx/projects/klee-test/klee/examples/get_sign/get_sign.c:19: malloc size could be zero
+simplifyExpr-----------after
+simplifyExpr-----------before
+(Eq false
+    (Ult (Add w8 224 (Read w8 0 arg0))
+         95))
+simplifyExpr===========after
+(Eq false
+    (Ult (Add w8 224 (Read w8 0 arg0))
+         95))
+simplifyExpr-----------after
+simplifyExpr-----------before
+(Ult (Add w8 224 (Read w8 0 arg0))
+     95)
+simplifyExpr===========after
+(Ult (Add w8 224 (Read w8 0 arg0))
+     95)
+simplifyExpr-----------after
+KLEE: [xqx]: handleMalloc--------------------
+K
+
+
+=====================================================
+KLEE: [xqx]: SMTSolverTest in handMalloc====================
+(Eq 8
+    (Mul w32 2
+             (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0))))))
+simplifyExpr-----------before
+(Eq false
+    (Eq 8
+        (Mul w32 2
+                 (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0)))))))
+constraints in simplifyExpr====================
+(Eq 1
+    (ReadLSB w32 0 model_version))
+constraints in simplifyExpr====================
+(Eq 0
+    (And w32 (ZExt w32 (ReadLSB w16 N0:(Extract w32 0 (Add w64 256
+                                                               (Mul w64 2
+                                                                        (SExt w64 (SExt w32 (Read w8 0 arg0)))))) const_arr1))
+             8192))
+constraints in simplifyExpr====================
+(Eq false
+    (Eq 43 (Read w8 0 arg0)))
+constraints in simplifyExpr====================
+(Eq false
+    (Eq 45 (Read w8 0 arg0)))
+constraints in simplifyExpr====================
+(Ule (Add w8 208 (Read w8 0 arg0))
+     9)
+constraints in simplifyExpr====================
+(Eq false
+    (Eq 8
+        (Mul w32 2
+                 (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0)))))))
+constraints in simplifyExpr====================
+(Eq false
+    (Slt (Add w32 4294967288
+                  (Mul w32 2
+                           (Extract w32 0 (ZExt w64 (Add w8 208 (Read w8 0 arg0))))))
+         0))
+simplifyExpr===========after
+true
+KLEE: [xqx]: MustBeFalse is TRUE
+simplifyExpr-----------after
+s

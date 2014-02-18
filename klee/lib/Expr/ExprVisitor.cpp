@@ -24,12 +24,14 @@ using namespace klee;
 ref<Expr> ExprVisitor::visit(const ref<Expr> &e) {
   if (!UseVisitorHash || isa<ConstantExpr>(e)) {
     return visitActual(e);
-  } else {
+  } 
+  else {
     visited_ty::iterator it = visited.find(e);
 
     if (it!=visited.end()) {
       return it->second;
-    } else {
+    } 
+	else {
       ref<Expr> res = visitActual(e);
       visited.insert(std::make_pair(e, res));
       return res;
@@ -40,7 +42,8 @@ ref<Expr> ExprVisitor::visit(const ref<Expr> &e) {
 ref<Expr> ExprVisitor::visitActual(const ref<Expr> &e) {
   if (isa<ConstantExpr>(e)) {    
     return e;
-  } else {
+  } 
+  else {
     Expr &ep = *e.get();
 
     Action res = visitExpr(ep);

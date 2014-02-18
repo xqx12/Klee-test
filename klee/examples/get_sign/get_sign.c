@@ -29,5 +29,5 @@ int main(int argc, char *argv[]) {
   if(argc < 2) return 0;
   a = atoi(argv[1]);
   /*klee_make_symbolic(&a, sizeof(a), "a");*/
-  return get_sign(a);
+  return get_sign(2*a-8);
 } 
