@@ -3820,6 +3820,9 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 			ConstantExpr::create(0,size->getWidth()));
 //	ref<ConstantExpr> tmpZeroValue;
 
+	klee_message("[xqx]===size expr:================");
+	size->dump();
+	klee_message("[xqx]===size=0 expr:================");
 	isZeroSize->dump();
 	bool bZero ;
 	bool success = solver->mayBeTrue(state, isZeroSize, bZero );

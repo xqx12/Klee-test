@@ -25,7 +25,8 @@ m32:
 	$(LLVMGCC) -m32 --emit-llvm -c ${CFILES} 
 	gcc ${CFILES} -m32 -o ${GCCOBJECTS}
 #	klee --libc=uclibc -posix-runtime --emit-all-errors bench_test.o --sym-args 2 2 5
-	$(KLEE) --libc=uclibc -posix-runtime --emit-all-errors ${OBJECTS} --sym-args 1 1 1
+	$(KLEE) --libc=uclibc -posix-runtime --emit-all-errors ${OBJECTS} --sym-args 1 1 1 1> klee.log 2>&1 && vim klee.log
+
 
 clean:
 	rm -rf *.o *.out
