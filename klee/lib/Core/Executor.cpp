@@ -956,7 +956,7 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 }
 
 void Executor::addConstraint(ExecutionState &state, ref<Expr> condition) {
-	condition->dump();
+	//condition->dump();
 	if (ConstantExpr *CE = dyn_cast<ConstantExpr>(condition)) {
 		assert(CE->isTrue() && "attempt to add invalid constraint");
 		return;
@@ -984,7 +984,7 @@ void Executor::addConstraint(ExecutionState &state, ref<Expr> condition) {
 	}
 				
 
-	condition->dump();
+	//condition->dump();
 	state.addConstraint(condition);
 	if (ivcEnabled)
 		doImpliedValueConcretization(state, condition, 
@@ -1198,11 +1198,11 @@ void Executor::executeCall(ExecutionState &state,
 		std::vector< ref<Expr> > &arguments) {
 	Instruction *i = ki->inst;
 	if (f && f->isDeclaration()) {
-		klee_message("[xqx]: executeCall which is declaration, func = %s ", f->getName().data());
+		//klee_message("[xqx]: executeCall which is declaration, func = %s ", f->getName().data());
 		switch(f->getIntrinsicID()) {
 			case Intrinsic::not_intrinsic:
 				// state may be destroyed by this call, cannot touch
-				klee_message("[xqx]: executeCall in Instrinisic, func = %s ", f->getName().data());
+				//klee_message("[xqx]: executeCall in Instrinisic, func = %s ", f->getName().data());
 				callExternalFunction(state, ki, f, arguments);
 				break;
 
@@ -1210,7 +1210,7 @@ void Executor::executeCall(ExecutionState &state,
 				// ExecutionState::varargs
 			case Intrinsic::vastart:  
 				{
-				klee_message("[xqx]: executeCall in vastart, func = %s ", f->getName().data());
+				//klee_message("[xqx]: executeCall in vastart, func = %s ", f->getName().data());
 					StackFrame &sf = state.stack.back();
 					assert(sf.varargs && 
 							"vastart called in function with no vararg object");
@@ -1264,7 +1264,7 @@ void Executor::executeCall(ExecutionState &state,
 			transferToBasicBlock(ii->getNormalDest(), i->getParent(), state);
 	}
 	else {
-		klee_message("[xqx]: executeCall which is not declaration, func = %s ", f->getName().data());
+		//klee_message("[xqx]: executeCall which is not declaration, func = %s ", f->getName().data());
 
 		// FIXME: I'm not really happy about this reliance on prevPC but it is ok, I
 		// guess. This just done to avoid having to pass KInstIterator everywhere
@@ -1342,10 +1342,10 @@ void Executor::executeCall(ExecutionState &state,
 		unsigned numFormals = f->arg_size();
 		for (unsigned i=0; i<numFormals; ++i) {
 			bindArgument(kf, i, state, arguments[i]);
-			arguments[i]->dump();
+			//arguments[i]->dump();
 		}
 
-		klee_message("[xqx]: executeCall bindArgument %d args ", numFormals);
+		//klee_message("[xqx]: executeCall bindArgument %d args ", numFormals);
 	}
 }
 
@@ -1680,6 +1680,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 					arguments.push_back(eval(ki, j+1, state).value);
 
 				if (f) {
+					/*
 				klee_message("[xqx]===exec inst in Call=================");
 				i->dump();
 				klee_message("[xqx]: call func = %s ", f->getName().data());
@@ -1693,6 +1694,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				}
 					klee_message("[xqx]: assemble.ll :%d ", iii.assemblyLine);
 				klee_message("[xqx]-------------------------------------");
+				*/
 
 					const FunctionType *fType = 
 						dyn_cast<FunctionType>(cast<PointerType>(f->getType())->getElementType());
@@ -1764,9 +1766,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 											"resolved symbolic function pointer to: %s",
 											f->getName().data());
 
-				klee_message("[xqx]===exec inst in Call (not direct)=================");
-				klee_message("[xqx]: call func = %s ", f->getName().data());
-				klee_message("[xqx]-------------------------------------");
+				//klee_message("[xqx]===exec inst in Call (not direct)=================");
+				//klee_message("[xqx]: call func = %s ", f->getName().data());
+				//klee_message("[xqx]-------------------------------------");
 								executeCall(*res.first, ki, f, arguments);
 							} 
 							else {
@@ -3788,10 +3790,10 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 		ref<Expr> size	)
 {
 
-	klee_message("[xqx]===doSizeControlledMalloc=================");
+	//klee_message("[xqx]===doSizeControlledMalloc=================");
  
 	Instruction *i = target->inst;
-	i->dump();
+	//i->dump();
 	Function *TmpF = i->getParent()->getParent();
 	klee_message("Func: %s", TmpF->getName().data());
 
@@ -3820,10 +3822,11 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 			ConstantExpr::create(0,size->getWidth()));
 //	ref<ConstantExpr> tmpZeroValue;
 
-	klee_message("[xqx]===size expr:================");
-	size->dump();
-	klee_message("[xqx]===size=0 expr:================");
-	isZeroSize->dump();
+	//klee_message("[xqx]===size expr:================");
+	//size->dump();
+	//klee_message("[xqx]===size=0 expr:================");
+	//isZeroSize->dump();
+
 	bool bZero ;
 	bool success = solver->mayBeTrue(state, isZeroSize, bZero );
 	assert(success && "FIXME: Unhandled solver failure");      
@@ -3837,7 +3840,7 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 	//FIXME : it will be integer overflow check first
 
 	if(bZero){
-		klee_message( "[xqx] mayBeTrue, may be Zero");      
+		//klee_message( "[xqx] mayBeTrue, may be Zero");      
 		addConstraint(state, isZeroSize);
 		terminateStateOnError(state, 
 				"malloc zero size", 
@@ -3853,7 +3856,7 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 				xinfo.str());
 	}
 
-	klee_message("[xqx]---doSizeControlledMalloc-----------------");
+	//klee_message("[xqx]---doSizeControlledMalloc-----------------");
 
 	return true;
 
