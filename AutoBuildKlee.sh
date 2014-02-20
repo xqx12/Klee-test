@@ -3,6 +3,8 @@
 #needed
 sudo apt-get install g++ curl dejagnu subversion bison flex bc libcap-dev
 
+CWD=`pwd`
+
 #download llvm-gcc and put it to $PATH
 if [ ! -f llvm-gcc4.2-2.9-x86_64-linux.tar.bz2 ]
 then
@@ -75,9 +77,9 @@ cd ../
 
 #build klee
 export C_INCLUDE_PATH=/usr/include/x86_64-linux-gnu
-git clone https://github.com/ccadar/klee.git
+#git clone https://github.com/ccadar/klee.git
 cd klee
-./configure --with-llvm=/home/xqx/projects/llvm-2.9 --with-stp=/home/xqx/projects/stp-r940/install  --with-uclibc=/home/xqx/projects/klee-uclibc --enable-posix-runtime
+./configure --with-llvm=${CWD}/llvm-2.9 --with-stp=${CWD}/stp-r940/install  --with-uclibc=${CWD}/klee-uclibc --enable-posix-runtime
 # ./configure # --with-llvm=../llvm-2.9 --with-stp=../stp-r940/install --with-uclibc=../klee-uclibc --enable-posix-runtime \
 #&&  make ENABLE_OPTIMIZED=1 -j `grep -c processor /proc/cpuinfo`
 make #upline cmd may fail

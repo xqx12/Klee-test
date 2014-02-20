@@ -98,8 +98,8 @@ void ConstraintManager::simplifyForValidConstraint(ref<Expr> e) {
 
 ref<Expr> ConstraintManager::simplifyExpr(ref<Expr> e) const {
 
-	std::cout << "simplifyExpr-----------before\n";
-	e->dump();
+	//std::cout << "simplifyExpr-----------before\n";
+	//e->dump();
 
 	if (isa<ConstantExpr>(e))
 		return e;
@@ -108,8 +108,8 @@ ref<Expr> ConstraintManager::simplifyExpr(ref<Expr> e) const {
 
 	for (ConstraintManager::constraints_ty::const_iterator 
 			it = constraints.begin(), ie = constraints.end(); it != ie; ++it) {
-		std::cout << "constraints in simplifyExpr====================\n";
-		(*it)->dump();	
+		//std::cout << "constraints in simplifyExpr====================\n";
+		//(*it)->dump();	
 		if (const EqExpr *ee = dyn_cast<EqExpr>(*it)) {
 			if (isa<ConstantExpr>(ee->left)) {
 				equalities.insert(std::make_pair(ee->right,
@@ -125,12 +125,12 @@ ref<Expr> ConstraintManager::simplifyExpr(ref<Expr> e) const {
 		}
 	}
 
-	e = ExprReplaceVisitor2(equalities).visit(e);
-	std::cout << "simplifyExpr===========after\n";
-	e->dump();
-	std::cout << "simplifyExpr-----------after\n";
-	return e;
-	//return ExprReplaceVisitor2(equalities).visit(e);
+	//e = ExprReplaceVisitor2(equalities).visit(e);
+	//std::cout << "simplifyExpr===========after\n";
+	//e->dump();
+	//std::cout << "simplifyExpr-----------after\n";
+	//return e;
+	return ExprReplaceVisitor2(equalities).visit(e);
 }
 
 void ConstraintManager::addConstraintInternal(ref<Expr> e) {
