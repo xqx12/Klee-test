@@ -12,6 +12,7 @@
 #include "klee/Internal/ADT/TreeStream.h"
 #include "klee/Internal/Support/ModuleUtil.h"
 #include "klee/Internal/System/Time.h"
+#include "klee/xPath.h"
 
 #if LLVM_VERSION_CODE > LLVM_VERSION(3, 2)
 #include "llvm/IR/Constants.h"
@@ -1161,6 +1162,7 @@ int main(int argc, char **argv, char **envp) {
     STPLOG_init("stplog.c");
 #endif
 
+	xPathAnalysisPrint();
     klee_message("[xqx]klee main : ");
 
     atexit(llvm_shutdown);  // Call llvm_shutdown() on exit.
@@ -1369,8 +1371,10 @@ int main(int argc, char **argv, char **envp) {
     }
     infoFile << "PID: " << getpid() << "\n";
 
+	//HERE will call runOnModule in divCheck
     const Module *finalModule = 
         interpreter->setModule(mainModule, Opts);
+
     externalsAndGlobalsCheck(finalModule);
 
     if (ReplayPathFile != "") {

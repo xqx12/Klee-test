@@ -19,22 +19,21 @@ def main():
 	#lines = ps.readlines()
 	#print lines
 	#ps.close
-	f = open("/tmp/tmp.log" , "w")
+	#f = open("/tmp/tmp.log" , "w")
 	ppid=os.getppid()
 	#f = open("/proc/%d/cmdline" % ppid)
 	#line = f.readline()
-	name = os.popen("pstree %d -sa" % ppid) 
+	name = os.popen("ps %d" % ppid) 
 	lines = name.readlines()
-	for i in lines:
-		f.writelines(i)
-	f.close()
+	#for i in lines:
+		#f.writelines(i)
+	#f.close()
 	#line = str(os.execvp("ps" , ["aux", str(ppid)]))
-	for line in lines:
-		if line.find("configure") != -1:
-			print "configure"
-			os.system("gcc " + " ".join(sys.argv[1:]))
-			#os.execvp("gcc", [] + sys.argv[1:])
-			return 1
+	if lines[1].find("configure") != -1:
+		print "configure"
+		os.system("gcc " + " ".join(sys.argv[1:]))
+		#os.execvp("gcc", [] + sys.argv[1:])
+		return 1
 
 	if not isLinkCommand():
 		os.execvp("llvm-gcc", ["llvm-gcc", "-emit-llvm"] + sys.argv[1:])
