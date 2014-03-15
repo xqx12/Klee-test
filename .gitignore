@@ -13,6 +13,7 @@ Output/
 
 cscope.*
 klee-out*
+klee-last*
 
 *.log
 *.sum
