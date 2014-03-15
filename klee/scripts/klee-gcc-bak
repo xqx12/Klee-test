@@ -9,29 +9,9 @@ def isLinkCommand():
             return True
 
 def main():
-    ppid = os.getppid()
-    ps = os.popen("pstree %d -as" % ppid)
-    lines = ps.readlines()
-    for line in lines:
-		if line.find("configure") != -1:
-			os.execvp("llvm-gcc", [""] + sys.argv[1:])
     if not isLinkCommand():
-
-		args = sys.argv[1:]
-		ccArgs = []
-		for a in args:
-			if a in ('-Wuninitialized', '-O', '-O2', '-O3',
-					'-Wmissing-parameter-type', '-Wtype-limits',
-					'-Wunused-but-set-parameter', '-Wunused-but-set-variable',
-					'-Wunused-result'):
-				continue
-			elif a.startswith('-Wl,'):
-				continue
-	
-			ccArgs.append(a)
-
-		os.execvp("llvm-gcc", ["llvm-gcc", "-emit-llvm"] + ccArgs)
-		return 1
+        os.execvp("llvm-gcc", ["llvm-gcc", "-emit-llvm"] + sys.argv[1:])
+        return 1
 
     # Otherwise, strip out arguments that llvm-ld doesn't understand. I don't
     # want my previous explicit declaration of hackyness to imply that this bit
@@ -39,10 +19,7 @@ def main():
     args = sys.argv[1:]
     linkArgs = []
     for a in args:
-        if a in ('-g', '-W', '-O', '-D', '-f','-O3',  '-O2',
-				'-Wmissing-parameter-type', '-Wtype-limits',
-				'-Wunused-but-set-parameter', '-Wunused-but-set-variable',
-				'-Wunused-result',
+        if a in ('-g', '-W', '-O', '-D', '-f',
                  '-fnested-functions', '-pthread'):
             continue
         elif a.startswith('-Wl,'):

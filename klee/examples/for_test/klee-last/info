@@ -1,0 +1,21 @@
+/home/xqx/data/xqx/projects/klee-test/klee/Release+Asserts/bin/klee --libc=uclibc -posix-runtime --emit-all-errors --use-query-log=all:pc bench_test.o 3 aaaa
+PID: 6069
+Started: 2014-01-25 09:54:34
+BEGIN searcher description
+<InterleavedSearcher> containing 2 searchers:
+RandomPathSearcher
+WeightedRandomSearcher::CoveringNew
+</InterleavedSearcher>
+END searcher description
+Finished: 2014-01-25 09:54:34
+Elapsed: 00:00:00
+KLEE: done: explored paths = 15
+KLEE: done: avg. constructs per query = 22
+KLEE: done: total queries = 24
+KLEE: done: valid queries = 0
+KLEE: done: invalid queries = 24
+KLEE: done: query cex = 24
+
+KLEE: done: total instructions = 7378
+KLEE: done: completed paths = 15
+KLEE: done: generated tests = 15

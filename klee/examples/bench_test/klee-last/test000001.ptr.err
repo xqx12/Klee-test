@@ -1,0 +1,15 @@
+Error: memory error: out of bound pointer
+File: /home/xqx/data/xqx/projects/klee-test/klee-uclibc/libc/stdlib/stdlib.c
+Line: 526
+assembly.ll line: 3473
+Stack: 
+	#0 00003473 in _stdlib_strto_l (str=0, endptr=0, base=10, sflag=1) at /home/xqx/data/xqx/projects/klee-test/klee-uclibc/libc/stdlib/stdlib.c:526
+	#1 00003295 in strtol (str=0, endptr=0, base=10) at /home/xqx/data/xqx/projects/klee-test/klee-uclibc/libc/stdlib/stdlib.c:332
+	#2 00001468 in atoi (nptr=0) at /home/xqx/data/xqx/projects/klee-test/klee-uclibc/libc/stdlib/stdlib.c:276
+	#3 00000000 in __user_main (argc=1, argv=49302848)
+	#4 00001081 in __uClibc_main (main=41920640, argc=1, argv=49302848, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/data/xqx/projects/klee-test/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#5 00000000 in main (=1, =49302848)
+Info: 
+	address: 0
+	next: object at 42832080 of size 80
+		MO16[80] allocated at main():  call void @__uClibc_main(i32 (i32, i8**, i8**)* bitcast (i32 (i32, i8**)* @__user_main to i32 (i32, i8**, i8**)*), i32 %0, i8** %1, void ()* null, void ()* null, void ()* null, i8* null)

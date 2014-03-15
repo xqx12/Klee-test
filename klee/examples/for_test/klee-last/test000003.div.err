@@ -1,0 +1,7 @@
+Error: divide by zero
+Stack: 
+	#0 00011411 in klee_div_zero_check (z=0) at /home/xqx/data/xqx/projects/klee-test/klee/runtime/Intrinsic/klee_div_zero_check.c:14
+	#1 00000000 in div_zero (divisor=1)
+	#2 00000000 in __user_main (argc=3, argv=30038000)
+	#3 00001092 in __uClibc_main (main=27917424, argc=3, argv=30038000, app_init=0, app_fini=0, rtld_fini=0, stack_end=0) at /home/xqx/data/xqx/projects/klee-test/klee-uclibc/libc/misc/internals/__uClibc_main.c:401
+	#4 00000000 in main (=3, =30038000)

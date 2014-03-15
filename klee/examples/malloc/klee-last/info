@@ -1,0 +1,3 @@
+klee --libc=uclibc -posix-runtime --emit-all-errors -search=dfs malloc.o --sym-args 2 2 2
+PID: 46190
+Started: 2014-02-17 17:23:51
