@@ -5,7 +5,7 @@ import os, sys
 def isLinkCommand():
     # Look for '-Wl,' as a signal that we are calling the linker. What a hack.
     for arg in sys.argv:
-        if arg.startswith('-Wl'):
+       if arg.startswith('-Wl'):
             return True
         #elif arg.endswith('.o'):
 			#return True
@@ -22,16 +22,16 @@ def main():
     args = sys.argv[1:]
     linkArgs = []
     for a in args:
-        if a in ('-g', '-W', '-O', '-D', '-f', '-O2',
+       if a in ('-g', '-W', '-O', '-D', '-f', '-O2',
 				 '-Wstrict-prototypes', '-Wmissing-prototypes',
                  '-fnested-functions', '-pthread'):
             continue
-        elif a.startswith('-Wl'):
+       elif a.startswith('-Wl'):
             continue
-        elif a.startswith('-Wall'):
+       elif a.startswith('-Wall'):
             continue
 
-        linkArgs.append(a)
+       linkArgs.append(a)
     
     os.execvp("llvm-ld", ["llvm-ld", "--disable-opt"] + linkArgs)
     return 1

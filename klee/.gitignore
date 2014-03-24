@@ -4,7 +4,9 @@ Debug/
 Debug+Asserts/
 Output/
 klee-out*/
+klee-last*/
 doxygen/
+examples/*
 
 cscope.*
 
@@ -13,6 +15,7 @@ cscope.*
 *.out
 *.status
 *.ktest
+*.swp
 
 *.config
 
