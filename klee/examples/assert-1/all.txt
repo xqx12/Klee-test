@@ -1,0 +1,421 @@
+klee-replay: TEST CASE: klee-last/test000001.ktest
+klee-replay: ARGS: "test.o" "-(" "  " 
+unknow option：(
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000002.ktest
+klee-replay: ARGS: "test.o" "-" "-(" 
+unknow option：(
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000003.ktest
+klee-replay: ARGS: "test.o" "2 " "-(" 
+unknow option：(
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000004.ktest
+klee-replay: ARGS: "test.o" "-t" "6_" 
+test.o: test.c:28: checkValidRange: Assertion `a == 2*b' failed.
+option:t = 6_
+klee-replay: EXIT STATUS: CRASHED signal 6 (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000005.ktest
+klee-replay: ARGS: "test.o" "-t" "6 " 
+test.o: test.c:28: checkValidRange: Assertion `a == 2*b' failed.
+option:t = 6 
+klee-replay: EXIT STATUS: CRASHED signal 6 (1 seconds)
+
+klee-replay: TEST CASE: klee-last/test000006.ktest
+klee-replay: ARGS: "test.o" "-t" "+1" 
+test.o: test.c:28: checkValidRange: Assertion `a == 2*b' failed.
+option:t = +1
+klee-replay: EXIT STATUS: CRASHED signal 6 (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000007.ktest
+klee-replay: ARGS: "test.o" "-t" "` " 
+option:t = ` 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000008.ktest
+klee-replay: ARGS: "test.o" "-t" "`_" 
+option:t = `_
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000009.ktest
+klee-replay: ARGS: "test.o" "-t" "+`" 
+option:t = +`
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000010.ktest
+klee-replay: ARGS: "test.o" "-t" " 9" 
+test.o: test.c:28: checkValidRange: Assertion `a == 2*b' failed.
+option:t =  9
+klee-replay: EXIT STATUS: CRASHED signal 6 (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000011.ktest
+klee-replay: ARGS: "test.o" "-t" "17" 
+test.o: test.c:28: checkValidRange: Assertion `a == 2*b' failed.
+option:t = 17
+klee-replay: EXIT STATUS: CRASHED signal 6 (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000012.ktest
+klee-replay: ARGS: "test.o" "-t" " `" 
+option:t =  `
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000013.ktest
+klee-replay: ARGS: "test.o" "-t" "1`" 
+test.o: test.c:28: checkValidRange: Assertion `a == 2*b' failed.
+option:t = 1`
+klee-replay: EXIT STATUS: CRASHED signal 6 (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000014.ktest
+klee-replay: ARGS: "test.o" "-:" "-(" 
+unknow option：:
+unknow option：(
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000015.ktest
+klee-replay: ARGS: "test.o" "-g" "-(" 
+unknow option：(
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000016.ktest
+klee-replay: ARGS: "test.o" "-v" "-(" 
+unknow option：(
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000017.ktest
+klee-replay: ARGS: "test.o" "2 " "-" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000018.ktest
+klee-replay: ARGS: "test.o" "2 " "2 " 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000019.ktest
+klee-replay: ARGS: "test.o" "-" "-" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000020.ktest
+klee-replay: ARGS: "test.o" "-" "2 " 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000021.ktest
+klee-replay: ARGS: "test.o" "--" "  " 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000022.ktest
+klee-replay: ARGS: "test.o" "-" "--" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000023.ktest
+klee-replay: ARGS: "test.o" "2 " "--" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000024.ktest
+klee-replay: ARGS: "test.o" "-:" "2 " 
+unknow option：:
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000025.ktest
+klee-replay: ARGS: "test.o" "-:" "-" 
+unknow option：:
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000026.ktest
+klee-replay: ARGS: "test.o" "-v" "2 " 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000027.ktest
+klee-replay: ARGS: "test.o" "-v" "-" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000028.ktest
+klee-replay: ARGS: "test.o" "-:" "--" 
+unknow option：:
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000029.ktest
+klee-replay: ARGS: "test.o" "-" "-:" 
+unknow option：:
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000030.ktest
+klee-replay: ARGS: "test.o" "-g" "2 " 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000031.ktest
+klee-replay: ARGS: "test.o" "-g" "-" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000032.ktest
+klee-replay: ARGS: "test.o" "-t" ". " 
+option:t = . 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000033.ktest
+klee-replay: ARGS: "test.o" "-t" "J " 
+option:t = J 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000034.ktest
+klee-replay: ARGS: "test.o" "-t" "-@" 
+option:t = -@
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000035.ktest
+klee-replay: ARGS: "test.o" "-t" " -" 
+option:t =  -
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000036.ktest
+klee-replay: ARGS: "test.o" "-t" "0R" 
+option:t = 0R
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000037.ktest
+klee-replay: ARGS: "test.o" "-t" "0 " 
+option:t = 0 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000038.ktest
+klee-replay: ARGS: "test.o" "-t" "+_" 
+option:t = +_
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000039.ktest
+klee-replay: ARGS: "test.o" "-t" "+@" 
+option:t = +@
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000040.ktest
+klee-replay: ARGS: "test.o" "-t" "  " 
+option:t =   
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000041.ktest
+klee-replay: ARGS: "test.o" "-t" "-_" 
+option:t = -_
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000042.ktest
+klee-replay: ARGS: "test.o" "-t" "8`" 
+test.o: test.c:28: checkValidRange: Assertion `a == 2*b' failed.
+option:t = 8`
+klee-replay: EXIT STATUS: CRASHED signal 6 (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000043.ktest
+klee-replay: ARGS: "test.o" "-t" " Z" 
+option:t =  Z
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000044.ktest
+klee-replay: ARGS: "test.o" "-t" " !" 
+option:t =  !
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000045.ktest
+klee-replay: ARGS: "test.o" "-t" "10" 
+option:t = 10
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000046.ktest
+klee-replay: ARGS: "test.o" "-t" " +" 
+option:t =  +
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000047.ktest
+klee-replay: ARGS: "test.o" "-t" "+0" 
+option:t = +0
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000048.ktest
+klee-replay: ARGS: "test.o" "-t" "-`" 
+option:t = -`
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000049.ktest
+klee-replay: ARGS: "test.o" "-v" "--" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000050.ktest
+klee-replay: ARGS: "test.o" "-" "-t" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000051.ktest
+klee-replay: ARGS: "test.o" "-t" "-1" 
+option:t = -1
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000052.ktest
+klee-replay: ARGS: "test.o" "-t" "69" 
+option:t = 69
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000053.ktest
+klee-replay: ARGS: "test.o" "-t" "`0" 
+option:t = `0
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000054.ktest
+klee-replay: ARGS: "test.o" "-t" " 0" 
+option:t =  0
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000055.ktest
+klee-replay: ARGS: "test.o" "-t" "``" 
+option:t = ``
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000056.ktest
+klee-replay: ARGS: "test.o" "-g" "--" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000057.ktest
+klee-replay: ARGS: "test.o" "-" "-g" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000058.ktest
+klee-replay: ARGS: "test.o" "2 " "-v" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000059.ktest
+klee-replay: ARGS: "test.o" "-" "-v" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000060.ktest
+klee-replay: ARGS: "test.o" "2 " "-:" 
+unknow option：:
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000061.ktest
+klee-replay: ARGS: "test.o" "-:" "-:" 
+unknow option：:
+unknow option：:
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000062.ktest
+klee-replay: ARGS: "test.o" "2 " "-g" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000063.ktest
+klee-replay: ARGS: "test.o" "-:" "-v" 
+unknow option：:
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000064.ktest
+klee-replay: ARGS: "test.o" "2 " "-t" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000065.ktest
+klee-replay: ARGS: "test.o" "-:" "-g" 
+unknow option：:
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000066.ktest
+klee-replay: ARGS: "test.o" "-:" "-t" 
+unknow option：:
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000067.ktest
+klee-replay: ARGS: "test.o" "-v" "-:" 
+unknow option：:
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000068.ktest
+klee-replay: ARGS: "test.o" "-v" "-v" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000069.ktest
+klee-replay: ARGS: "test.o" "-g" "-v" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000070.ktest
+klee-replay: ARGS: "test.o" "-v" "-g" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000071.ktest
+klee-replay: ARGS: "test.o" "-g" "-:" 
+unknow option：:
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000072.ktest
+klee-replay: ARGS: "test.o" "-g" "-g" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000073.ktest
+klee-replay: ARGS: "test.o" "-v" "-t" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+
+klee-replay: TEST CASE: klee-last/test000074.ktest
+klee-replay: ARGS: "test.o" "-g" "-t" 
+-----finished------
+klee-replay: EXIT STATUS: NORMAL (0 seconds)
+klee-replay: error: input file 2 not valid.

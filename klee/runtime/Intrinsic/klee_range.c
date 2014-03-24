@@ -13,6 +13,9 @@
 int klee_range(int start, int end, const char* name) {
   int x;
 
+  /*klee_message("[xqx] klee_range start %d end %d ", start, end);*/
+  /*fprintf(stderr, "[xqx] klee_range start %d end %d ", start, end);*/
+
   if (start >= end)
     klee_report_error(__FILE__, __LINE__, "invalid range", "user");
 

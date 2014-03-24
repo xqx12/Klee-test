@@ -54,6 +54,9 @@ using namespace klee;
 char DivCheckPass::ID;
 
 bool DivCheckPass::runOnModule(Module &M) { 
+
+	std::cerr << "------------------this is a test in DivCheckPass in runOnModule-------------\n";
+
   Function *divZeroCheckFunction = 0;
 
   bool moduleChanged = false;

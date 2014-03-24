@@ -25,8 +25,8 @@ int main(int argc, char *argv[])
   argv1 = atoi(argv[1]); //simulate assign the value
   strcpy(argv2, argv[2] );
 
-//  klee_make_symbolic(&argv1, 4, "argv1");
-  klee_make_symbolic(argv2, 16, "argv2");
+  klee_make_symbolic(&argv1, 4, "argv1");
+  /* klee_make_symbolic(argv2, 16, "argv2"); */
 
   if(argv1 < 3 ) 
 	  return -1;

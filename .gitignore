@@ -18,6 +18,7 @@ klee-last*
 *.log
 *.sum
 *.out
+*.swp
 *.status
 
 *.config

@@ -34,6 +34,7 @@ endif
 #
 include $(LEVEL)/Makefile.common
 
+
 .PHONY: doxygen
 doxygen:
 	doxygen docs/doxygen.cfg
@@ -51,6 +52,7 @@ cscope.files:
           -name \*.h | sort > cscope.files
 
 test::
+	echo "==================="
 	-(cd test/ && make)
 
 .PHONY: klee-cov
