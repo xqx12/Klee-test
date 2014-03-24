@@ -23,6 +23,10 @@
 #endif
 #include "llvm/Pass.h"
 #include "llvm/CodeGen/IntrinsicLowering.h"
+//addbyxqx201403
+#include "llvm/Analysis/CallGraph.h"
+#include "llvm/PassAnalysisSupport.h"
+#include "llvm/ADT/Statistic.h"
 
 namespace llvm {
   class Function;
@@ -125,6 +129,37 @@ public:
   virtual bool runOnModule(llvm::Module &M);
 };
 
+//
+//add a pass for get the call paths, addbyxqx201403
+//
+class CallPathsPass : public llvm::ModulePass {
+
+	protected:
+		llvm::Module *M;
+
+	public:
+		static char ID;
+		CallPathsPass() : ModulePass(ID) { 
+			llvm::PassRegistry &Registry = *llvm::PassRegistry::getPassRegistry();
+			llvm::initializeBasicCallGraphPass(Registry);
+			llvm::initializeCallGraphAnalysisGroup(Registry);
+			llvm::initializeDominatorTreePass(Registry);
+			//llvm::initializeCallGraphWrapperPassPass(Registry);
+			//llvm::initializeCallGraphPrinterPass(Registry);
+			//llvm::initializeCallGraphViewerPass(Registry);
+		}
+		void test();
+
+		virtual bool runOnModule(llvm::Module &M);
+		virtual void getAnalysisUsage(llvm::AnalysisUsage &AU) const {
+			AU.setPreservesAll();
+			AU.addRequired<llvm::CallGraph>();
+		}
+
+	//private:
+		//OwningPtr<DataLayout> TD;
+
+};
 /// This pass injects checks to check for overshifting.
 ///
 /// Overshifting is where a Shl, LShr or AShr is performed

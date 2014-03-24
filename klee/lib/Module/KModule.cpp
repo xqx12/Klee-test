@@ -58,6 +58,8 @@
 using namespace llvm;
 using namespace klee;
 
+extern llvm::Pass *createCallPathsPass();
+
 namespace {
   enum SwitchImplType {
     eSwitchTypeSimple,
@@ -339,6 +341,13 @@ void KModule::prepare(const Interpreter::ModuleOptions &opts,
   pm.add(new RaiseAsmPass());
   if (opts.CheckDivZero) pm.add(new DivCheckPass());
   if (opts.CheckOvershift) pm.add(new OvershiftCheckPass());
+
+  //add a pass to get the path before run klee
+  //pm.add(new CallPathsPass());
+  //CallPathsPass *ps = (CallPathsPass*)createCallPathsPass();
+  //if(ps != NULL) 
+	  //ps->test();
+
   // FIXME: This false here is to work around a bug in
   // IntrinsicLowering which caches values which may eventually be
   // deleted (via RAUW). This can be removed once LLVM fixes this

@@ -162,3 +162,36 @@ bool OvershiftCheckPass::runOnModule(Module &M) {
   }
   return moduleChanged;
 }
+
+char CallPathsPass::ID;
+static RegisterPass<CallPathsPass>
+Y("xqx-pass", "call paths");
+//X("xqx-pass", "call paths", false, true);
+
+llvm::Pass *createCallPathsPass(){
+	std::cerr << "-----------createCallPathsPass-------\n" ;
+	return new CallPathsPass;
+}
+
+bool CallPathsPass::runOnModule(Module &M) { 
+	std::cerr << "------------------this is a test in CallPathsPass in runOnModule-------------\n";
+	CallGraph &CG = getAnalysis<CallGraph>();  
+	//TD.reset(new DataLayout(&M)); 
+	CG.dump();
+	CallGraphNode *cgNode = CG.getRoot(); 
+	cgNode->dump();
+
+}
+
+void CallPathsPass::test()
+{
+	std::cerr << "-------test in CallPathsPass--------------\n" ;
+	CallGraph &CG = getAnalysis<CallGraph>();  
+	//TD.reset(new DataLayout(&M)); 
+	CallGraphNode *cgNode = CG.getRoot(); 
+	cgNode->dump();
+}
+
+
+
+
