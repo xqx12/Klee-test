@@ -11,9 +11,12 @@ GCCOBJECTS := $(patsubst %.c, %.out,  ${CFILES})
 
 all: 
 	$(LLVMGCC) -g --emit-llvm -c ${CFILES} 
-	gcc ${CFILES} -g -o ${GCCOBJECTS}
+	#gcc ${CFILES} -g -o ${GCCOBJECTS}
 #	klee --libc=uclibc -posix-runtime --emit-all-errors bench_test.o --sym-args 2 2 5
-	$(KLEE) -write-paths -write-sym-paths -use-call-paths  --libc=uclibc -posix-runtime --emit-all-errors ${OBJECTS} --sym-args 1 1 1  1> klee.log 2>&1 && vim klee.log
+	#$(KLEE) -write-paths -write-sym-paths -use-call-paths  --libc=uclibc -posix-runtime --emit-all-errors ${OBJECTS} --sym-args 1 1 1  1> klee.log 2>&1 && vim klee.log
+	#$(KLEE)  --emit-all-errors ${OBJECTS} --sym-args 1 1 1 1> klee.log 2>&1 && vim klee.log
+	#$(KLEE)  --libc=uclibc -posix-runtime --emit-all-errors ${OBJECTS} 2>&1 | tee  klee.log && vim klee.log
+	$(KLEE)  --emit-all-errors ${OBJECTS} 2>&1 | tee  klee.log && vim klee.log
 	
 gcov:
 	$(LLVMGCC) --emit-llvm -c ${CFILES} 
