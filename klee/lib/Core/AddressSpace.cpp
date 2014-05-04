@@ -15,6 +15,8 @@
 #include "klee/Expr.h"
 #include "klee/TimerStatIncrementer.h"
 
+#include <iostream>
+
 using namespace klee;
 
 ///
@@ -78,10 +80,9 @@ bool AddressSpace::resolveOne(ExecutionState &state,
 {
 	if (ConstantExpr *CE = dyn_cast<ConstantExpr>(address)) {
 		success = resolveOne(CE, result);
-		//Q:  I think here should be return success ??? addbyxqx 
 		return true;
-	} 
-	else {
+	} else {
+		std::cerr << "[xqx] resolveOne address is not constant\n";
 		TimerStatIncrementer timer(stats::resolveTime);
 
 		// try cheap search, will succeed for any inbounds pointer

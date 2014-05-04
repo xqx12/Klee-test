@@ -232,8 +232,9 @@ private:
   void markByteFlushed(unsigned offset);
   void markByteUnflushed(unsigned offset);
   void setKnownSymbolic(unsigned offset, Expr *value);
-
+public: //add for test addbyxqx
   void print();
+  void print() const;
 };
   
 } // End klee namespace

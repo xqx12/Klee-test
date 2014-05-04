@@ -8,6 +8,7 @@
 #       bin : the binary will to replay, patten is bin.out
 #       gcov or lcov : to report coverage by gcov or lcov
 
+export PATH=$PATH:/home/xqx/data/xqx/projects/klee-test/klee/Release+Asserts/bin
 TARGET="klee-last"
 #BINARYDIR="/home/xqx/projects/coreutils-6.10/obj-gcov/src/"
 BINARYDIR=$(pwd)/
@@ -24,7 +25,7 @@ function myparse() {
 
 function replay() {
 	TMPFILE=$1
-	klee-replay ${BINARYDIR}$2.out ${TMPFILE}.ktest 
+	klee-replay ${BINARYDIR}$2 ${TMPFILE}.ktest 
 }
 
 if [ ! "W$1" = "W" ]

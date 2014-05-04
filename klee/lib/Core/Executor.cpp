@@ -125,7 +125,8 @@ using namespace metaSMT::solver;
 
 #endif /* SUPPORT_METASMT */
 
-
+//for print dbug info addbyxqx20140325
+//#define xDEBUG  
 
 namespace {
 	cl::opt<bool>
@@ -3338,8 +3339,24 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 		ref<Expr> address,
 		ref<Expr> value /* undef if read */,
 		KInstruction *target /* undef if write */) {
+#ifdef xDEBUG
+	klee_message("[xqx]:--executeMemoryOperation--called ");
+	if(target != NULL){
+		Instruction *i = target->inst;
+		i->dump();
+		klee_message("read from ");
+		address->dump();
+	}
+	else 
+	{
+		value->dump();
+		klee_message("write to ");
+		address->dump();
+	}
+#endif
 	Expr::Width type = (isWrite ? value->getWidth() : 
 			getWidthForLLVMType(target->inst->getType()));
+	//llvm::errs() << "type = " << type << "\n";
 	unsigned bytes = Expr::getMinBytesForWidth(type);
 
 	if (SimplifySymIndices) {
@@ -3353,10 +3370,28 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 	ObjectPair op;
 	bool success;
 	solver->setTimeout(coreSolverTimeout);
+
+	//if the address be resolved will return true, if resolve failed will return false, 
+	//such as checkthebound failed.
+	//if resolve success ,the bool success will be set to true
 	if (!state.addressSpace.resolveOne(state, solver, address, op, success)) {
+		klee_message("[xqx]:--resolveOne first--called ");
 		address = toConstant(state, address, "resolveOne failure");
 		success = state.addressSpace.resolveOne(cast<ConstantExpr>(address), op);
 	}
+#ifdef xDEBUG
+	klee_message("[xqx]--addressSpace.objects.size() = %d", state.addressSpace.objects.size());
+	const MemoryObject *tmpMo = op.first;
+	const ObjectState *tmpOs = op.second;
+	ref<Expr> rbase = tmpMo->getBaseExpr();
+	ref<Expr> rsize = tmpMo->getSizeExpr();
+	klee_message("[xqx]--MemoryObject--base & size---");
+	rbase->dump();
+	rsize->dump();
+	klee_message("[xqx]--Objectstate-print------------------------");
+	tmpOs->print();
+	klee_message("[xqx]--Objectstate-print-----------------------end-");
+#endif
 	solver->setTimeout(0);
 
 	if (success) {
@@ -3413,12 +3448,20 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 			0, coreSolverTimeout);
 	solver->setTimeout(0);
 
+	klee_message("[xqx]--ResolutionList size = %d---", rl.size());
 	// XXX there is some query wasteage here. who cares?
 	ExecutionState *unbound = &state;
 
 	for (ResolutionList::iterator i = rl.begin(), ie = rl.end(); i != ie; ++i) {
 		const MemoryObject *mo = i->first;
 		const ObjectState *os = i->second;
+#ifdef xDEBUG
+		ref<Expr> rbase1 = mo->getBaseExpr();
+		ref<Expr> rsize1 = mo->getSizeExpr();
+		klee_message("[xqx]--MemoryObject--base & size---");
+		rbase1->dump();
+		rsize1->dump();
+#endif
 		ref<Expr> inBounds = mo->getBoundsCheckPointer(address, bytes);
 
 		StatePair branches = fork(*unbound, inBounds, true);

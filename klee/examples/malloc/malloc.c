@@ -41,16 +41,18 @@ main ( int argc, char *argv[] )
 	int size;
 	int x;
 	
-	if ( argc < 3 )
-		return 0;
+	/*if ( argc < 3 )*/
+		/*return 0;*/
 
-	size = atoi( argv[1] );
-	x = atoi( argv[2] );
+	/*size = atoi( argv[1] );*/
+	/*x = atoi( argv[2] );*/
 
+	size = 10;
 	int * myBuf = (int *)malloc(sizeof(int)*size);
 	/*if (myBuf != NULL)*/
 		/*free((void *)myBuf);*/
 
+	memcpy( myBuf, "aaaaaaaaaaaaaaaaaa" , 100);
 	if (!doSomething(x, myBuf))
 	{
 		free((void *)myBuf);

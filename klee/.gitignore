@@ -3,8 +3,8 @@ Release+Asserts/
 Debug/
 Debug+Asserts/
 Output/
-klee-out*/
-klee-last*/
+klee-out*/*
+klee-last/*
 doxygen/
 examples/*
 
