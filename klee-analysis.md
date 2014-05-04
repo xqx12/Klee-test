@@ -29,3 +29,13 @@ Klee-Analysis
 	5. libtool -shared not be recognized . FIX: delete it.
 
 
+
+3. how to check memory errors.
+
+	report ptr.err for memory errors. mainly in ExecuteMemoryOperation which called by Instruction Load and Store
+
+	an important thing in ExecuteMemoryOperation is resolve the address. two function to do it: AddressSpace::resolveOne and AddressSpace::resolve.
+
+
+
+

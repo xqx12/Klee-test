@@ -3849,10 +3849,19 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 	}
 	klee_message("calledFunc: %s", fc->getName().data());
 
-	if( fc->getName() != "malloc"){
+	if( fc->getName() != "malloc" &&
+		fc->getName() != "realloc" &&
+		fc->getName() != "xmalloc" &&
+		fc->getName() != "xrealloc"
+			){
 		// not care, give back to klee.
 		return false;
 	}
+
+	printFileLine(state, target);
+	klee_message("  [xqx] allocfileline");
+
+	
 
 	//ref<ConstantExpr> example;
 	//bool success = solver->getValue(state, size, example);
