@@ -48,7 +48,8 @@ def main():
 	for a in args:
 		if a in ('-g', '-W', '-O', '-D', '-f', '-O2',
 				'-Wstrict-prototypes', '-Wmissing-prototypes',
-				'-fnested-functions', '-pthread'):
+				'-fnested-functions', '-pthread', '-std=c99',
+				"-fPIC", "-shared"):
 			continue
 		elif a.startswith('-Wl'):
 			continue

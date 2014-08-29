@@ -133,6 +133,7 @@ int __fd_open(const char *pathname, int flags, mode_t mode) {
   for (fd = 0; fd < MAX_FDS; ++fd)
     if (!(__exe_env.fds[fd].flags & eOpen))
       break;
+
   if (fd == MAX_FDS) {
     errno = EMFILE;
     return -1;
