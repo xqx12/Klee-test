@@ -35,6 +35,10 @@ namespace klee {
   void klee_message(const char *msg, ...)
     __attribute__ ((format (printf, 1, 2)));
 
+  void klee_xqx_debug(const char *msg, ...)
+    __attribute__ ((format (printf, 1, 2)));
+
+
   /// Print "KLEE: " followed by the msg in printf format and a
   /// newline to messages.txt.
   void klee_message_to_file(const char *msg, ...)

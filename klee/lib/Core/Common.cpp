@@ -17,6 +17,8 @@
 
 #include <set>
 
+#define XQX_DEBUG
+
 using namespace klee;
 
 FILE* klee::klee_warning_file = NULL;
@@ -60,6 +62,15 @@ void klee::klee_message(const char *msg, ...) {
   va_start(ap, msg);
   klee_vmessage(NULL, false, msg, ap);
   va_end(ap);
+}
+
+void klee::klee_xqx_debug(const char *msg, ...) {
+#ifdef XQX_DEBUG
+  va_list ap;
+  va_start(ap, msg);
+  klee_vmessage("XQX", false, msg, ap);
+  va_end(ap);
+#endif
 }
 
 /* Message to be written only to file */
