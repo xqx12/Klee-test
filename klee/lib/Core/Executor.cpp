@@ -3564,7 +3564,8 @@ void Executor::executeMakeSymbolic(ExecutionState &state,
 				}
 			}
 		}
-	} else {
+	} 
+	else {
 		ObjectState *os = bindObjectInState(state, mo, false);
 		if (replayPosition >= replayOut->numObjects) {
 			terminateStateOnError(state, "replay count mismatch", "user.err");
