@@ -125,8 +125,10 @@ using namespace metaSMT::solver;
 
 #endif /* SUPPORT_METASMT */
 
+
 //for print dbug info addbyxqx20140325
 //#define xDEBUG  
+#undef XQX_DEBUG
 
 namespace {
 	cl::opt<bool>
@@ -674,6 +676,7 @@ void Executor::branch(ExecutionState &state,
 		}
 	}
 
+
 	// If necessary redistribute seeds to match conditions, killing
 	// states if necessary due to OnlyReplaySeeds (inefficient but
 	// simple).
@@ -732,11 +735,19 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 	std::map< ExecutionState*, std::vector<SeedInfo> >::iterator it = 
 		seedMap.find(&current);
 	bool isSeeding = it != seedMap.end();
+#if 0
+#ifdef XQX_DEBUG
+		klee_xqx_debug("fork0");
+		if(isSeeding==true) klee_xqx_debug("isSeeding ");
+		condition->dump();
+#endif
+#endif
 
 	if (!isSeeding && !isa<ConstantExpr>(condition) && 
 			(MaxStaticForkPct!=1. || MaxStaticSolvePct != 1. ||
 			 MaxStaticCPForkPct!=1. || MaxStaticCPSolvePct != 1.) &&
 			statsTracker->elapsed() > 60.) {
+		klee_xqx_debug("fork1");
 		StatisticManager &sm = *theStatisticManager;
 		CallPathNode *cpn = current.stack.back().callPathNode;
 		if ((MaxStaticForkPct<1. &&
@@ -751,9 +762,11 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 				(MaxStaticCPForkPct<1. &&
 				 cpn && (cpn->statistics.getValue(stats::solverTime) > 
 					 stats::solverTime*MaxStaticCPSolvePct))) {
+		klee_xqx_debug("fork2, value = ");
 			ref<ConstantExpr> value; 
 			bool success = solver->getValue(current, condition, value);
 			assert(success && "FIXME: Unhandled solver failure");
+			value->dump();
 			(void) success;
 			addConstraint(current, EqExpr::create(value, condition));
 			condition = value;
@@ -792,9 +805,12 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 					addConstraint(current, Expr::createIsZero(condition));
 				}
 			}
-		} else if (res==Solver::Unknown) {
+		}
+		else if (res==Solver::Unknown) {
 			assert(!replayOut && "in replay mode, only one branch can be true.");
-
+#ifdef XQX_DEBUG
+		klee_xqx_debug("solver=Unknown");
+#endif
 			if ((MaxMemoryInhibit && atMemoryLimit) || 
 					current.forkDisabled ||
 					inhibitForking || 
@@ -860,6 +876,9 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 	// hint to just use the single constraint instead of all the binary
 	// search ones. If that makes sense.
 	if (res==Solver::True) {
+#if 0
+		klee_xqx_debug("solver=True");
+#endif
 		if (!isInternal) {
 			if (pathWriter) {
 				current.pathOS << "1";
@@ -869,6 +888,9 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 		return StatePair(&current, 0);
 	}
 	else if (res==Solver::False) {
+#if 0
+		klee_xqx_debug("solver=False");
+#endif
 		if (!isInternal) {
 			if (pathWriter) {
 				current.pathOS << "0";
@@ -878,10 +900,25 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 		return StatePair(0, &current);
 	}
 	else {
+#ifdef XQX_DEBUG
+		klee_xqx_debug("solver=Unknown");
+#endif
 		TimerStatIncrementer timer(stats::forkTime);
 		ExecutionState *falseState, *trueState = &current;
 
 		++stats::forks;
+#ifdef XQX_INFO
+		if (statsTracker){
+			uint64_t forknum = statsTracker->printForksStatInfo(current.prevPC);
+#ifdef XQX_DEBUG_1
+			if( forknum > 10) {
+				std::ostringstream msg;
+				current.dumpStack(msg);
+				klee_xqx_debug(msg.str().c_str());
+			}
+#endif
+		}
+#endif
 
 		falseState = trueState->branch();
 		addedStates.insert(falseState);
@@ -894,8 +931,20 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 			it->second.clear();
 			std::vector<SeedInfo> &trueSeeds = seedMap[trueState];
 			std::vector<SeedInfo> &falseSeeds = seedMap[falseState];
+			int index=0;
 			for (std::vector<SeedInfo>::iterator siit = seeds.begin(), 
 					siie = seeds.end(); siit != siie; ++siit) {
+#ifdef XQX_DEBUG
+		  klee_xqx_debug("seed branch %d-------------------",++index);
+		SeedInfo *si = &*siit;
+		si->printSeedInfo();
+		  klee_xqx_debug("condition is:-------------------");
+		  condition->dump();
+		  klee_xqx_debug("condition after evaluate:-------------------");
+		  ref<Expr> tmp = siit->assignment.evaluate(condition);
+		  tmp->dump();
+#endif
+
 				ref<ConstantExpr> res;
 				bool success = 
 					solver->getValue(current, siit->assignment.evaluate(condition), res);
@@ -944,6 +993,12 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 
 		addConstraint(*trueState, condition);
 		addConstraint(*falseState, Expr::createIsZero(condition));
+#ifdef XQX_DEBUG
+		klee_xqx_debug("fork-----------------");
+		condition->dump();
+		klee_xqx_debug("fork-create zeor----------------");
+		Expr::createIsZero(condition)->dump();
+#endif
 
 		// Kinda gross, do we even really still want this option?
 		if (MaxDepth && MaxDepth<=trueState->depth) {
@@ -1191,6 +1246,11 @@ void Executor::stepInstruction(ExecutionState &state) {
 
 	if (stats::instructions==StopAfterNInstructions)
 		haltExecution = true;
+
+
+    if ((stats::instructions % 10000) == 0) {
+		klee_xqx_debug("10000 instructions executed");
+	}
 }
 
 void Executor::executeCall(ExecutionState &state, 
@@ -1464,6 +1524,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 				if (state.stack.size() <= 1) {
 					assert(!caller && "caller set on initial stack frame");
+					klee_xqx_debug("Ret Inst state.stacksize=%d",state.stack.size());
 					terminateStateOnExit(state);
 				} else {
 					state.popFrame();
@@ -2703,6 +2764,8 @@ void Executor::run(ExecutionState &initialState) {
 			goto dump;
 	}
 
+	klee_xqx_debug("start symbolic execution now-------");
+
 	searcher = constructUserSearcher(*this);
 
 	searcher->update(0, states, std::set<ExecutionState*>());
@@ -3915,6 +3978,12 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 
 }
 ///
+
+void Executor::printStatsInfoWithSrcLine()
+{
+	if (statsTracker)
+		statsTracker->printStatsInfo(stats::forks);
+}
 
 Interpreter *Interpreter::create(const InterpreterOptions &opts,
 		InterpreterHandler *ih) {

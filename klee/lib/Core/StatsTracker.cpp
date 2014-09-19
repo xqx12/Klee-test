@@ -156,7 +156,8 @@ static bool instructionIsCoverable(Instruction *i) {
     BasicBlock::iterator it(i);
     if (it==bb->begin()) {
       return true;
-    } else {
+    } 
+	else {
       Instruction *prev = --it;
       if (isa<CallInst>(prev) || isa<InvokeInst>(prev)) {
         Function *target = getDirectCallTarget(prev);
@@ -601,6 +602,7 @@ static std::vector<Instruction*> getSuccs(Instruction *i) {
 
 uint64_t klee::computeMinDistToUncovered(const KInstruction *ki,
                                          uint64_t minDistAtRA) {
+	klee_xqx_debug("=====computeMinDistToUncovered=======");
   StatisticManager &sm = *theStatisticManager;
   if (minDistAtRA==0) { // unreachable on return, best is local
     return sm.getIndexedValue(stats::minDistToUncovered,
@@ -673,11 +675,20 @@ void StatsTracker::computeReachableUncovered() {
          fnIt != fn_ie; ++fnIt) {
       if (fnIt->isDeclaration()) {
         if (fnIt->doesNotReturn()) {
+#ifdef XQX_DEBUG
+	  klee_xqx_debug("not Return function=%s, ", fnIt->getNameStr().c_str());
+#endif
           functionShortestPath[fnIt] = 0;
         } else {
+#ifdef XQX_DEBUG
+	  klee_xqx_debug("Return function=%s, ", fnIt->getNameStr().c_str());
+#endif
           functionShortestPath[fnIt] = 1; // whatever
         }
       } else {
+#ifdef XQX_DEBUG
+	  klee_xqx_debug("not declare function=%s, ", fnIt->getNameStr().c_str());
+#endif
         functionShortestPath[fnIt] = 0;
       }
 
@@ -721,7 +732,8 @@ void StatsTracker::computeReachableUncovered() {
                 bestThrough = dist;
             }
           }
-        } else {
+        } 
+		else {
           bestThrough = 1;
         }
        
@@ -758,6 +770,38 @@ void StatsTracker::computeReachableUncovered() {
       }
     } while (changed);
   }
+
+  //init end
+#ifdef XQX_DEBUG
+  //print the functionshortestpath and instructions minDistToReturn
+  std::map<Function*, unsigned>::iterator fsit, fset=functionShortestPath.end(); 
+  for(fsit=functionShortestPath.begin();fsit!=fset;fsit++)
+  {
+	  Function *f = fsit->first;
+	  unsigned sp = fsit->second; 
+	  klee_xqx_debug("function=%s, path=%d", f->getNameStr().c_str(), sp);
+  }
+  klee_xqx_debug("=====================minDistToReturn=================");
+  for (Module::iterator fnIt = m->begin(), fn_ie = m->end(); 
+		  fnIt != fn_ie; ++fnIt) {
+	  klee_xqx_debug("Function minDistToReturn=================");
+	  klee_xqx_debug("function=%s, path=%d", fnIt->getNameStr().c_str(), functionShortestPath[fnIt]);
+      for (Function::iterator bbIt = fnIt->begin(), bb_ie = fnIt->end(); 
+           bbIt != bb_ie; ++bbIt) {
+		  klee_xqx_debug("BasicBlock inDistToReturn-----------------");
+		  klee_xqx_debug("bb=%s, ", bbIt->getNameStr().c_str());
+        for (BasicBlock::iterator it = bbIt->begin(), ie = bbIt->end(); 
+             it != ie; ++it) {
+			unsigned id = infos.getInfo(it).id;
+			uint64_t cur = sm.getIndexedValue(stats::minDistToReturn, id);
+			Instruction *TmpI = it;
+			TmpI->dump();
+			klee_xqx_debug("\t\tminDistToReturn=%d", cur);
+		}
+	  }
+
+  }
+#endif
 
   // compute minDistToUncovered, 0 is unreachable
   std::vector<Instruction *> instructions;
@@ -838,6 +882,30 @@ void StatsTracker::computeReachableUncovered() {
     }
   } while (changed);
 
+#ifdef XQX_DEBUG
+  klee_xqx_debug("=====================minDistToUncovered=================");
+  for (Module::iterator fnIt = m->begin(), fn_ie = m->end(); 
+		  fnIt != fn_ie; ++fnIt) {
+	  klee_xqx_debug("Function minDistToUncovered=================");
+	  klee_xqx_debug("===function=%s, ", fnIt->getNameStr().c_str() );
+      for (Function::iterator bbIt = fnIt->begin(), bb_ie = fnIt->end(); 
+           bbIt != bb_ie; ++bbIt) {
+		  klee_xqx_debug("BasicBlock minDistToUncovered-----------------");
+		  klee_xqx_debug("====bb=%s, ", bbIt->getNameStr().c_str());
+        for (BasicBlock::iterator it = bbIt->begin(), ie = bbIt->end(); 
+             it != ie; ++it) {
+			unsigned id = infos.getInfo(it).id;
+			uint64_t cur = sm.getIndexedValue(stats::minDistToUncovered, id);
+			Instruction *TmpI = it;
+			TmpI->dump();
+			klee_xqx_debug("\t\tminDistToUncovered=%d", cur);
+		}
+	  }
+
+  }
+#endif
+
+
   for (std::set<ExecutionState*>::iterator it = executor.states.begin(),
          ie = executor.states.end(); it != ie; ++it) {
     ExecutionState *es = *it;
@@ -860,3 +928,66 @@ void StatsTracker::computeReachableUncovered() {
     }
   }
 }
+
+
+
+void StatsTracker::printStatsInfo(const Statistic &s) {
+	
+	klee_message("BasicBlock minDistToUncovered-----------------");
+
+	KModule *km = executor.kmodule;
+	Module *m = km->module;
+	const InstructionInfoTable &infos = *km->infos;
+	StatisticManager &sm = *theStatisticManager;
+
+#ifdef XQX_DEBUG
+	klee_xqx_debug("=====================forks in each inst=================");
+	for (Module::iterator fnIt = m->begin(), fn_ie = m->end(); 
+			fnIt != fn_ie; ++fnIt) {
+		klee_xqx_debug("\nFunctions =================");
+		klee_xqx_debug("function=%s, ", fnIt->getNameStr().c_str() );
+		for (Function::iterator bbIt = fnIt->begin(), bb_ie = fnIt->end(); 
+				bbIt != bb_ie; ++bbIt) {
+			klee_xqx_debug("BasicBlock in forks-----------------");
+			klee_xqx_debug("bb=%s, ", bbIt->getNameStr().c_str());
+			for (BasicBlock::iterator it = bbIt->begin(), ie = bbIt->end(); 
+					it != ie; ++it) {
+				unsigned id = infos.getInfo(it).id;
+				uint64_t cur = sm.getIndexedValue(stats::forks, id);
+				if(cur==0) continue;
+				const InstructionInfo& ii = km->infos->getInfo(it);
+				Instruction *TmpI = it;
+				TmpI->dump();
+				klee_xqx_debug("%s:%d asm:%d", ii.file.c_str(), ii.line, ii.assemblyLine); 
+				klee_xqx_debug("\t\tforks=%d", cur);
+			}
+		}
+
+	}
+
+#endif
+
+}
+
+
+uint64_t StatsTracker::printForksStatInfo(KInstruction *ki) {
+	const InstructionInfo &ii = *ki->info;
+	KModule *km = executor.kmodule;
+	Module *m = km->module;
+	const InstructionInfoTable &infos = *km->infos;
+	StatisticManager &sm = *theStatisticManager;
+	
+	unsigned id = infos.getInfo(ki->inst).id;
+	uint64_t cur = sm.getIndexedValue(stats::forks, id);
+
+	if(cur < 10) return cur;
+
+	klee_xqx_debug("forks ------------------");
+	klee_message("forks num = %d", cur);
+	klee_xqx_debug("%s:%d asm:%d", ii.file.c_str(), ii.line, ii.assemblyLine); 
+
+	return cur;
+}
+
+
+

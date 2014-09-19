@@ -84,7 +84,10 @@ int kTest_isKTestFile(const char *path) {
   int res;
 
   if (!f)
+  {
+	  printf("openfailed %s\n", path);
     return 0;
+  }
   res = kTest_checkHeader(f);
   fclose(f);
   

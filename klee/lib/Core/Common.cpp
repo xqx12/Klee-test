@@ -17,7 +17,6 @@
 
 #include <set>
 
-#define XQX_DEBUG
 
 using namespace klee;
 

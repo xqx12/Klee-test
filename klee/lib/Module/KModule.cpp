@@ -60,6 +60,9 @@ using namespace klee;
 
 extern llvm::Pass *createCallPathsPass();
 
+#undef XQX_DEBUG
+
+
 namespace {
   enum SwitchImplType {
     eSwitchTypeSimple,
@@ -539,6 +542,10 @@ unsigned KModule::getConstantID(Constant *c, KInstruction* ki) {
   kc = new KConstant(c, id, ki);
   constantMap.insert(std::make_pair(c, kc));
   constants.push_back(c);
+#ifdef XQX_DEBUG
+  klee_xqx_debug("insert constant+++++++++++id=%d",id);
+  c->dump();
+#endif
   return id;
 }
 
@@ -615,11 +622,18 @@ KFunction::KFunction(llvm::Function *_function,
 
       ki->inst = it;      
       ki->dest = registerMap[it];
+#ifdef XQX_DEBUG
+	  it->dump();
+#endif
 
       if (isa<CallInst>(it) || isa<InvokeInst>(it)) {
         CallSite cs(it);
         unsigned numArgs = cs.arg_size();
         ki->operands = new int[numArgs+1];
+#ifdef XQX_DEBUG
+		klee_xqx_debug("kfunction----%s",cs.getCalledValue()->getName());
+		klee_xqx_debug("kfunction---cs dump-");
+#endif
         ki->operands[0] = getOperandNum(cs.getCalledValue(), registerMap, km,
                                         ki);
         for (unsigned j=0; j<numArgs; j++) {

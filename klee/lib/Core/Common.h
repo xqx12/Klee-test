@@ -16,6 +16,10 @@
 #endif
 #endif
 
+#define XQX_DEBUG
+#define XQX_DEBUG_1
+#define XQX_INFO
+
 #include <stdio.h>
 
 // XXX ugh

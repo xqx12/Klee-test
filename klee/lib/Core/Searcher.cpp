@@ -209,6 +209,7 @@ double WeightedRandomSearcher::getWeight(ExecutionState *es) {
   case MinDistToUncovered: {
     uint64_t md2u = computeMinDistToUncovered(es->pc,
                                               es->stack.back().minDistToUncoveredOnReturn);
+	klee_xqx_debug("computeMinDistToUncovered = %d ", md2u);
 
     double invMD2U = 1. / (md2u ? md2u : 10000);
     if (type==CoveringNew) {

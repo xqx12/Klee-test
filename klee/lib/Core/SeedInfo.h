@@ -42,6 +42,7 @@ namespace klee {
     void patchSeed(const ExecutionState &state, 
                    ref<Expr> condition,
                    TimingSolver *solver);
+	void printSeedInfo();
   };
 }
 

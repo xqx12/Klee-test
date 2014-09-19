@@ -1499,6 +1499,9 @@ int main(int argc, char **argv, char **envp) {
         delete[] pArgv[i];
     delete[] pArgv;
 
+	//print forks info with src code info
+	interpreter->printStatsInfoWithSrcLine();
+
     delete interpreter;
 
     uint64_t queries = 
@@ -1515,6 +1518,8 @@ int main(int argc, char **argv, char **envp) {
         *theStatisticManager->getStatisticByName("Instructions");
     uint64_t forks = 
         *theStatisticManager->getStatisticByName("Forks");
+
+
 
     handler->getInfoStream() 
         << "KLEE: done: explored paths = " << 1 + forks << "\n";

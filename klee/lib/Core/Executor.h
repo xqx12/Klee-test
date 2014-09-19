@@ -469,6 +469,8 @@ public:
                                std::map<const std::string*, std::set<unsigned> > &res);
 
   Expr::Width getWidthForLLVMType(LLVM_TYPE_Q llvm::Type *type) const;
+
+  virtual void printStatsInfoWithSrcLine();
 };
   
 } // End klee namespace

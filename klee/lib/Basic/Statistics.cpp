@@ -8,10 +8,14 @@
 //===----------------------------------------------------------------------===//
 
 #include "klee/Statistics.h"
+#include <stdio.h>
 
 #include <vector>
 
 using namespace klee;
+using namespace std;
+
+#define XQX_DEBUG
 
 StatisticManager::StatisticManager()
   : enabled(true),
@@ -27,12 +31,18 @@ StatisticManager::~StatisticManager() {
 }
 
 void StatisticManager::useIndexedStats(unsigned totalIndices) {  
+#ifdef XQX_DEBUG
+		printf("useIndexedStats: stats size= %d, totalIndices=%d\n" , stats.size(), totalIndices);
+#endif
   if (indexedStats) delete[] indexedStats;
   indexedStats = new uint64_t[totalIndices * stats.size()];
   memset(indexedStats, 0, sizeof(*indexedStats) * totalIndices * stats.size());
 }
 
 void StatisticManager::registerStatistic(Statistic &s) {
+#ifdef XQX_DEBUG
+		printf("in regitster statistic : stats size= %d\n" , stats.size());
+#endif
   if (globalStats) delete[] globalStats;
   s.id = stats.size();
   stats.push_back(&s);
@@ -68,6 +78,10 @@ Statistic::Statistic(const std::string &_name,
                      const std::string &_shortName) 
   : name(_name), 
     shortName(_shortName) {
+#ifdef XQX_DEBUG
+		//std::cout << "regitster statistic :	" << name << "\n";
+		printf("regitster statistic : %s\n" , _name.c_str());
+#endif
   getStatisticManager().registerStatistic(*this);
 }
 

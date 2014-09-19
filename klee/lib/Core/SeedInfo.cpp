@@ -163,3 +163,25 @@ void SeedInfo::patchSeed(const ExecutionState &state,
   }
 #endif
 }
+
+
+
+void SeedInfo::printSeedInfo()
+{
+//#ifdef XQX_DEBUG
+	klee_xqx_debug("=============printseedinfo============");
+
+	
+  for (Assignment::bindings_ty::iterator it = assignment.bindings.begin(), 
+         ie = assignment.bindings.end(); it != ie; ++it) {
+    const Array *array = it->first;
+	klee_xqx_debug("assign-name = %s", array->name.c_str());
+	klee_xqx_debug("assign-size = %d", array->size);
+    for (unsigned i=0; i<array->size; ++i) {
+		ref<Expr> tmp = assignment.evaluate(array, i);
+		tmp->dump();
+
+	}
+  }
+//#endif
+}

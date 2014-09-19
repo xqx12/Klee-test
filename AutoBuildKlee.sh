@@ -83,6 +83,7 @@ cd klee
 # ./configure # --with-llvm=../llvm-2.9 --with-stp=../stp-r940/install --with-uclibc=../klee-uclibc --enable-posix-runtime \
 #&&  make ENABLE_OPTIMIZED=1 -j `grep -c processor /proc/cpuinfo`
 make #upline cmd may fail
+#make ENABLE_OPTIMIZED=0 CXXFLAGS="-g -O0"
 if [ $? != 0 ]
 then
         echo "klee --- failed..."

@@ -59,6 +59,7 @@ static void buildInstructionToLineMap(Module *m,
   os.flush();
   const char *s;
 
+  //llvm::errs() << str.c_str() << "\n";
   unsigned line = 1;
   for (s=str.c_str(); *s; s++) {
     if (*s=='\n') {
@@ -66,7 +67,10 @@ static void buildInstructionToLineMap(Module *m,
       if (s[1]=='%' && s[2]=='%' && s[3]=='%') {
         s += 4;
         char *end;
+		//char tmp[16] = {0};
+		//memcpy(tmp,s,15);
         unsigned long long value = strtoull(s, &end, 10);
+		//llvm::errs() << "buildInstructionToLineMap: =" << tmp << "  value=" << value << " line=" << line << "\n";
         if (end!=s) {
           out.insert(std::make_pair((const Instruction*) value, line));
         }
@@ -131,12 +135,22 @@ InstructionInfoTable::InstructionInfoTable(Module *m)
         DEBUG_WITH_TYPE("klee_obtained_debug", dbgs() <<
           "Instruction: \"" << *instr << "\" (assembly line " << assemblyLine <<
           ") has debug location " << *initialFile << ":" << initialLine << "\n");
+#if 0
+		dbgs() << "id=" << id << 
+          "Instruction: \"" << *instr << "\" (assembly line " << assemblyLine <<
+          ") has debug location " << *initialFile << ":" << initialLine << "\n";
+#endif
       }
       else
       {
         DEBUG_WITH_TYPE("klee_missing_debug", dbgs() <<
           "Instruction: \"" << *instr << "\" (assembly line " << assemblyLine <<
           ") is missing debug info.\n");
+#if 0
+		dbgs() << "id=" << id << 
+          "Instruction: \"" << *instr << "\" (assembly line " << assemblyLine <<
+          ") has debug location " << *initialFile << ":" << initialLine << "\n";
+#endif
       }
     }
   }
@@ -183,3 +197,4 @@ InstructionInfoTable::getFunctionInfo(const Function *f) const {
     return getInfo(f->begin()->begin());
   }
 }
+

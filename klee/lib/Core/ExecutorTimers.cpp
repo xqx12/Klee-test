@@ -154,6 +154,7 @@ void Executor::processTimers(ExecutionState *current,
           }
           *os << "], ";
 
+		  klee_xqx_debug("====in processTimers=======");
           StackFrame &sf = es->stack.back();
           uint64_t md2u = computeMinDistToUncovered(es->pc,
                                                     sf.minDistToUncoveredOnReturn);

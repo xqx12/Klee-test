@@ -82,7 +82,9 @@ bool AddressSpace::resolveOne(ExecutionState &state,
 		success = resolveOne(CE, result);
 		return true;
 	} else {
+#if XQX_DEBUG 
 		std::cerr << "[xqx] resolveOne address is not constant\n";
+#endif
 		TimerStatIncrementer timer(stats::resolveTime);
 
 		// try cheap search, will succeed for any inbounds pointer
