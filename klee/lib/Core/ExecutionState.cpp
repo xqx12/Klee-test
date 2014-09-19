@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "Common.h"
 #include "klee/ExecutionState.h"
 
 #include "klee/Internal/Module/Cell.h"
@@ -33,6 +34,8 @@
 
 using namespace llvm;
 using namespace klee;
+
+#define XQX_INFO
 
 namespace { 
   cl::opt<bool>
@@ -76,6 +79,7 @@ ExecutionState::ExecutionState(KFunction *kf)
     instsSinceCovNew(0),
     coveredNew(false),
     forkDisabled(false),
+	id(0),
     ptreeNode(0) {
   pushFrame(0, kf);
 }
@@ -85,6 +89,7 @@ ExecutionState::ExecutionState(const std::vector<ref<Expr> > &assumptions)
     underConstrained(false),
     constraints(assumptions),
     queryCost(0.),
+	id(0),
     ptreeNode(0) {
 }
 
@@ -129,7 +134,7 @@ ExecutionState::ExecutionState(const ExecutionState& state)
     symbolics[i].first->refCount++;
 }
 
-ExecutionState *ExecutionState::branch() {
+ExecutionState *ExecutionState::branch(uint64_t sid) {
   depth++;
 
   ExecutionState *falseState = new ExecutionState(*this);
@@ -138,6 +143,11 @@ ExecutionState *ExecutionState::branch() {
 
   weight *= .5;
   falseState->weight -= weight;
+
+  falseState->id = sid;
+#ifdef XQX_INFO
+	klee_xqx_debug("branch new state [%d]." , sid);
+#endif
 
   return falseState;
 }

@@ -431,7 +431,11 @@ void KleeHandler::processTestCase(const ExecutionState &state,
 
         double start_time = util::getWallTime();
 
-        unsigned id = ++m_testIndex;
+		// testcase id keep the same with state id, addbyxqx201409
+        //unsigned id = ++m_testIndex;
+        unsigned id = state.id;
+		//we must inc m_testIndex, if m_testIndex==0 , it will set setHaltExecution(true);
+		++m_testIndex;
 
         if (success) {
             KTest b;      

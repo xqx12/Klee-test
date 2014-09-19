@@ -15,7 +15,7 @@
 using namespace klee;
 using namespace std;
 
-#define XQX_DEBUG
+#undef XQX_DEBUG
 
 StatisticManager::StatisticManager()
   : enabled(true),

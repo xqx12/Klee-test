@@ -97,6 +97,9 @@ public:
 
   typedef std::pair<ExecutionState*,ExecutionState*> StatePair;
 
+  //state unique id , addbyxqx201409
+  uint64_t stateID;
+
 private:
   class TimerInfo;
 

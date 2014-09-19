@@ -71,6 +71,8 @@ private:
   std::map< std::string, std::string > fnAliases;
 
 public:
+  // id of the state, increment by fork, addbyxqx201409
+  uint64_t id;
   bool fakeState;
   // Are we currently underconstrained?  Hack: value is size to make fake
   // objects.
@@ -126,7 +128,7 @@ public:
 
   ~ExecutionState();
   
-  ExecutionState *branch();
+  ExecutionState *branch(uint64_t sid);
 
   void pushFrame(KInstIterator caller, KFunction *kf);
   void popFrame();

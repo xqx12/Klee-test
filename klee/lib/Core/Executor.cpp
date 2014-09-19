@@ -288,6 +288,7 @@ Executor::Executor(const InterpreterOptions &opts,
 	inhibitForking(false),
 	haltExecution(false),
 	ivcEnabled(false),
+	stateID(0),
 	coreSolverTimeout(MaxCoreSolverTime != 0 && MaxInstructionTime != 0
 			? std::min(MaxCoreSolverTime,MaxInstructionTime)
 			: std::max(MaxCoreSolverTime,MaxInstructionTime)) {
@@ -665,7 +666,7 @@ void Executor::branch(ExecutionState &state,
 		result.push_back(&state);
 		for (unsigned i=1; i<N; ++i) {
 			ExecutionState *es = result[theRNG.getInt32() % i];
-			ExecutionState *ns = es->branch();
+			ExecutionState *ns = es->branch(++stateID);
 			addedStates.insert(ns);
 			result.push_back(ns);
 			es->ptreeNode->data = 0;
@@ -920,7 +921,7 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 		}
 #endif
 
-		falseState = trueState->branch();
+		falseState = trueState->branch(++stateID);
 		addedStates.insert(falseState);
 
 		if (RandomizeFork && theRNG.getBool())
@@ -1524,7 +1525,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 				if (state.stack.size() <= 1) {
 					assert(!caller && "caller set on initial stack frame");
-					klee_xqx_debug("Ret Inst state.stacksize=%d",state.stack.size());
+					klee_xqx_debug("exit-last-ret, state.stacksize=%d",state.stack.size());
 					terminateStateOnExit(state);
 				} else {
 					state.popFrame();
@@ -2894,7 +2895,9 @@ void Executor::terminateState(ExecutionState &state) {
 	}
 
 	interpreterHandler->incPathsExplored();
-
+#ifdef XQX_INFO
+	klee_xqx_debug("state[%d] terminated", state.id);
+#endif
 	std::set<ExecutionState*>::iterator it = addedStates.find(&state);
 	if (it==addedStates.end()) {
 		state.pc = state.prevPC;

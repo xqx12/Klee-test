@@ -29,12 +29,15 @@
 #include "llvm/ADT/Twine.h"
 
 #include <errno.h>
+#include <sstream>
+#include <string>
 
 using namespace llvm;
 using namespace klee;
 
 /// \todo Almost all of the demands in this file should be replaced
 /// with terminateState calls.
+//#undef XQX_DEBUG
 
 ///
 
@@ -243,6 +246,15 @@ void SpecialFunctionHandler::handleExit(ExecutionState &state,
                            KInstruction *target,
                            std::vector<ref<Expr> > &arguments) {
   assert(arguments.size()==1 && "invalid number of arguments to exit");
+#ifdef XQX_DEBUG
+  klee_xqx_debug("exit-handle, state[%d]", state.id);
+
+#ifdef XQX_DEBUG_1
+  std::ostringstream msg;
+  state.dumpStack(msg);
+  klee_xqx_debug(msg.str().c_str());
+#endif
+#endif
   executor.terminateStateOnExit(state);
 }
 
