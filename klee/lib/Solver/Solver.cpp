@@ -63,6 +63,7 @@ using namespace metaSMT::solver;
 
 #endif /* SUPPORT_METASMT */
 
+//#define XQX_DEBUG_SMT_INFO
 
 
 /***/
@@ -796,12 +797,14 @@ STPSolverImpl::computeInitialValues(const Query &query,
 
   ExprHandle stp_e = builder->construct(query.expr);
      
-  if (0) {
+#ifdef XQX_DEBUG_SMT_INFO 
+  if (1) {
     char *buf;
     unsigned long len;
     vc_printQueryStateToBuffer(vc, stp_e, &buf, &len, false);
     fprintf(stderr, "note: STP query: %.*s\n", (unsigned) len, buf);
   }
+#endif
 
   bool success;
   if (useForkedSTP) {

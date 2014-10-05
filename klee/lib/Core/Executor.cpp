@@ -128,7 +128,7 @@ using namespace metaSMT::solver;
 
 //for print dbug info addbyxqx20140325
 //#define xDEBUG  
-#undef XQX_DEBUG
+//#undef XQX_DEBUG
 
 namespace {
 	cl::opt<bool>
@@ -3968,7 +3968,15 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 		return true;
 	}
 	else {
-
+#ifdef XQX_DEBUG
+		klee_xqx_debug("solver range of size -----------");
+		std::pair< ref<Expr>, ref<Expr> > range;
+		range = solver->solver->getRange(Query(state.constraints, size));
+		klee_xqx_debug("min size is:");
+			range.first->dump();
+		klee_xqx_debug("max size is:");
+			range.second->dump();
+#endif
 		terminateStateOnError(state, 
 				"malloc symbolic size", 
 				"size-controlled-malloc.err", 

@@ -60,7 +60,7 @@ using namespace metaSMT::solver;
 
 #endif /* SUPPORT_METASMT */
 
-
+#define XQX_DEBUG
 
 
 namespace {
@@ -280,20 +280,33 @@ static bool EvaluateInputAST(const char *Filename,
          ie = Decls.end(); it != ie; ++it) {
     Decl *D = *it;
     if (QueryCommand *QC = dyn_cast<QueryCommand>(D)) {
+		QC->dump();
+		QC->Query->dump();
       std::cout << "Query " << Index << ":\t";
 
       assert("FIXME: Support counterexample query commands!");
       if (QC->Values.empty() && QC->Objects.empty()) {
         bool result;
+#ifdef XQX_DEBUG
+		if(0) {
+			std::pair< ref<Expr>, ref<Expr> > range;
+			range = S->getRange(Query(ConstraintManager(QC->Constraints), QC->Query));
+			range.first->dump();
+			range.second->dump();
+			continue;
+		}
+#endif
         if (S->mustBeTrue(Query(ConstraintManager(QC->Constraints), QC->Query),
                           result)) {
+		  Query(ConstraintManager(QC->Constraints), QC->Query).expr->dump();
           std::cout << (result ? "VALID" : "INVALID");
         } else {
           std::cout << "FAIL (reason: " 
                     << SolverImpl::getOperationStatusString(S->impl->getOperationStatusCode())
                     << ")";
         }
-      } else if (!QC->Values.empty()) {
+      } 
+	  else if (!QC->Values.empty()) {
         assert(QC->Objects.empty() && 
                "FIXME: Support counterexamples for values and objects!");
         assert(QC->Values.size() == 1 &&
@@ -311,7 +324,8 @@ static bool EvaluateInputAST(const char *Filename,
                     << SolverImpl::getOperationStatusString(S->impl->getOperationStatusCode())
                     << ")";
         }
-      } else {
+      } 
+	  else {
         std::vector< std::vector<unsigned char> > result;
         
         if (S->getInitialValues(Query(ConstraintManager(QC->Constraints), 
