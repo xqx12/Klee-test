@@ -59,6 +59,7 @@
 using namespace klee;
 using namespace llvm;
 
+#undef XQX_DEBUG
 ///
 
 namespace {  

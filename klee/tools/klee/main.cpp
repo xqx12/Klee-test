@@ -687,6 +687,12 @@ static int initEnv(Module *mainModule) {
     Value* oldArgc = mainFn->arg_begin();
     Value* oldArgv = ++mainFn->arg_begin();
 
+#if 0 //def XQX_DEBUG_ENV
+	klee_xqx_debug("printf args of main");
+	oldArgc->dump();
+	oldArgv->dump();
+#endif
+
     AllocaInst* argcPtr = 
         new AllocaInst(oldArgc->getType(), "argcPtr", firstInst);
     AllocaInst* argvPtr = 

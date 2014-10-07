@@ -24,6 +24,30 @@ static void __emit_error(const char *msg) {
   klee_report_error(__FILE__, __LINE__, msg, "user.err");
 }
 
+static void __set_zero(char *s, unsigned len) {
+
+	if(!s) __emit_error("set_zero s is null");
+	if(len<=0) __emit_error("set_zero len is leq than zero");
+
+	while(len--) {
+		*s='\0';
+		s++;
+	}
+
+}
+static long int __strlen(char *s) {
+	long int res = 0;
+	char c;
+	if(!s) __emit_error("strlen s is null");
+
+	while( c= *s++) {
+		if( c == '\0') 
+			break;
+		res++;
+	}
+	return res;
+}
+
 /* Helper function that converts a string to an integer, and
    terminates the program with an error message is the string is not a
    proper number */   
@@ -98,6 +122,14 @@ void klee_init_env(int* argcPtr, char*** argvPtr) {
   unsigned sym_arg_num = 0;
   int k=0, i;
 
+  int j=0;
+  unsigned xargs_num=0;
+  char xargv0[10], xargv1[10], xargv2[10];
+  __set_zero(xargv0,10);
+  __set_zero(xargv1,10);
+  __set_zero(xargv2,10);
+  
+
   sym_arg_name[4] = '\0';
 
   // Recognize --help when it is the sole argument.
@@ -144,6 +176,18 @@ usage: (klee_init_env) [options] [program arguments]\n\
         __add_arg(&new_argc, new_argv, 
                   __get_sym_str(max_len, sym_arg_name),
                   1024);
+#if 0
+		if(i==0) {
+			klee_assume(new_argv[new_argc-1][0]=='-'); 
+			klee_assume(new_argv[new_argc-1][1]=='l'); 
+			klee_assume(new_argv[new_argc-1][2]=='\0'); 
+		}
+		if(i==1) {
+			klee_assume(new_argv[new_argc-1][0]=='1'); 
+			klee_assume(new_argv[new_argc-1][1]=='0'); 
+			klee_assume(new_argv[new_argc-1][2]=='\0'); 
+		}
+#endif
       }
     }
     else if (__streq(argv[k], "--sym-files") || __streq(argv[k], "-sym-files")) {
@@ -176,6 +220,58 @@ usage: (klee_init_env) [options] [program arguments]\n\
 		
       fd_fail = __str_to_int(argv[k++], msg);
     }
+#if 1
+    else if (__streq(argv[k], "--xqx-args") || __streq(argv[k], "-xqx-args")) {
+      const char *msg = 
+        "--xqx-args expects more than two arguments <args-num> <argv1> <argv2> <...>";
+	  if (k+2 >= argc) 
+		  __emit_error(msg);
+
+	  k++;
+	  xargs_num = __str_to_int(argv[k++], msg);
+	  if (2 + xargs_num >= argc) 
+		  __emit_error(msg);
+
+	  for ( i=0; i<xargs_num; i++,k++) {
+		  //for 3 case , a , a: , a::
+		  if(__strlen(argv[k]) == 1) {
+			  sym_arg_name[3] = '0' + sym_arg_num++;
+			  __add_arg(&new_argc, new_argv, 
+					  __get_sym_str(3, sym_arg_name),
+					  1024);
+			  klee_assume(new_argv[new_argc-1][0]=='-'); 
+			  klee_assume(new_argv[new_argc-1][1]==*argv[k]); 
+			  klee_assume(new_argv[new_argc-1][2]=='\0'); 
+		  }
+		  if(__strlen(argv[k]) == 2) {
+			  sym_arg_name[3] = '0' + sym_arg_num++;
+			  __add_arg(&new_argc, new_argv, 
+					  __get_sym_str(3, sym_arg_name),
+					  1024);
+			  klee_assume(new_argv[new_argc-1][0]=='-'); 
+			  klee_assume(new_argv[new_argc-1][1]==*argv[k]); 
+			  klee_assume(new_argv[new_argc-1][2]=='\0'); 
+
+			  //add the other args, we assume the symbolic len is 4. it should be assigned by user 
+			  sym_arg_name[3] = '0' + sym_arg_num++;
+			  __add_arg(&new_argc, new_argv, 
+					  __get_sym_str(4, sym_arg_name),
+					  1024);
+		  }
+		  if(__strlen(argv[k]) == 3) {
+			  sym_arg_name[3] = '0' + sym_arg_num++;
+			  __add_arg(&new_argc, new_argv, 
+					  __get_sym_str(7, sym_arg_name),
+					  1024);
+			  klee_assume(new_argv[new_argc-1][0]=='-'); 
+			  klee_assume(new_argv[new_argc-1][1]==*argv[k]); 
+		  }
+
+	  }
+	
+	}	
+#endif
+
     else {
       /* simply copy arguments */
       __add_arg(&new_argc, new_argv, argv[k++], 1024);
