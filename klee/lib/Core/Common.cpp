@@ -72,6 +72,15 @@ void klee::klee_xqx_debug(const char *msg, ...) {
 #endif
 }
 
+void klee::klee_xqx_info(const char *msg, ...) {
+#ifdef XQX_INFO
+  va_list ap;
+  va_start(ap, msg);
+  klee_vmessage("XQX", false, msg, ap);
+  va_end(ap);
+#endif
+}
+
 /* Message to be written only to file */
 void klee::klee_message_to_file(const char *msg, ...) {
   va_list ap;

@@ -55,6 +55,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 using namespace klee;
 using namespace llvm;
@@ -980,9 +981,9 @@ uint64_t StatsTracker::printForksStatInfo(KInstruction *ki) {
 	
 	unsigned id = infos.getInfo(ki->inst).id;
 	uint64_t cur = sm.getIndexedValue(stats::forks, id);
-
+#ifndef XQX_DEBUG_SHOW_EACH_FORK
 	if(cur < 10) return cur;
-
+#endif
 	klee_xqx_debug("forks ------------------");
 	klee_message("forks num = %d", cur);
 	klee_xqx_debug("%s:%d asm:%d", ii.file.c_str(), ii.line, ii.assemblyLine); 
@@ -991,4 +992,28 @@ uint64_t StatsTracker::printForksStatInfo(KInstruction *ki) {
 }
 
 
+uint64_t StatsTracker::printForksStatInfo(ExecutionState *state) {
+	KInstruction *ki = state->prevPC;
+	const InstructionInfo &ii = *ki->info;
+	KModule *km = executor.kmodule;
+	Module *m = km->module;
+	const InstructionInfoTable &infos = *km->infos;
+	StatisticManager &sm = *theStatisticManager;
+	
+	unsigned id = infos.getInfo(ki->inst).id;
+	uint64_t cur = sm.getIndexedValue(stats::forks, id);
+#ifndef XQX_DEBUG_SHOW_EACH_FORK
+	if(cur < 10) return cur;
+#endif
+	klee_xqx_info("forks in state[%d]------------------", state->id);
+	klee_xqx_info("forks num = %d", cur);
+	klee_xqx_info("%s:%d asm:%d", ii.file.c_str(), ii.line, ii.assemblyLine); 
+
+#ifdef XQX_DEBUG_FORK_DUMP_STACK
+	std::ostringstream msg;
+	state->dumpStack(msg);
+	klee_xqx_info(msg.str().c_str());
+#endif
+	return cur;
+}
 

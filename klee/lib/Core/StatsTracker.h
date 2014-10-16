@@ -88,6 +88,7 @@ namespace klee {
 	void printStatsInfo(const Statistic &s);
 	//print forks time when > 10
 	uint64_t printForksStatInfo(KInstruction *ki);
+	uint64_t printForksStatInfo(ExecutionState *state) ;
   };
 
   uint64_t computeMinDistToUncovered(const KInstruction *ki,

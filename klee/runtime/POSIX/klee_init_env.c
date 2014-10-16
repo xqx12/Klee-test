@@ -20,6 +20,8 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
+#define false 0
+
 static void __emit_error(const char *msg) {
   klee_report_error(__FILE__, __LINE__, msg, "user.err");
 }
@@ -123,8 +125,10 @@ void klee_init_env(int* argcPtr, char*** argvPtr) {
   int k=0, i;
 
   int j=0;
+  int cond;
   unsigned xargs_num=0;
   char xargv0[10], xargv1[10], xargv2[10];
+  int xarg0, xarg1, xarg2;
   __set_zero(xargv0,10);
   __set_zero(xargv1,10);
   __set_zero(xargv2,10);
@@ -232,6 +236,74 @@ usage: (klee_init_env) [options] [program arguments]\n\
 	  if (2 + xargs_num >= argc) 
 		  __emit_error(msg);
 
+	  //get all args fisrt
+	  xarg0 = xarg1 = xarg2 = 0;
+	  for ( i=0; i<xargs_num; i++,k++) {
+		  //for 3 case , a , a: , a::
+		  if(__strlen(argv[k]) == 1) {
+			  xargv0[xarg0++] = *argv[k];
+			  if(xarg0>9) __emit_error("xarg0 must be less than 10"); 
+		  }
+		  if(__strlen(argv[k]) == 2) {
+			  xargv1[xarg1++] = *argv[k];
+			  if(xarg1>9) __emit_error("xarg1 must be less than 10"); 
+		  }
+		  if(__strlen(argv[k]) == 3) {
+			  xargv2[xarg2++] = *argv[k];
+			  if(xarg2>9) __emit_error("xarg2 must be less than 10"); 
+		  }
+		
+	  }
+
+	  //set the xargv0
+	  if(xargv0[0]!='\0') {
+		  sym_arg_name[3] = '0' + sym_arg_num++;
+		  __add_arg(&new_argc, new_argv, 
+				  __get_sym_str(3, sym_arg_name),
+				  1024);
+		  klee_assume(new_argv[new_argc-1][0]=='-'); 
+		  if(xargv0[0]!='\0') {
+			  klee_assume(new_argv[new_argc-1][1]==xargv0[0]);
+		  }
+		  /*klee_assume(xargv0[0]!='\0' ? new_argv[new_argc-1][1]==xargv0[0]:false*/
+		  /*); */
+		  klee_assume(new_argv[new_argc-1][2]=='\0'); 
+	  }
+
+	  //set the xargv1
+	  sym_arg_name[3] = '0' + sym_arg_num++;
+	  __add_arg(&new_argc, new_argv, 
+			  __get_sym_str(3, sym_arg_name),
+			  1024);
+	  klee_assume(new_argv[new_argc-1][0]=='-'); 
+	  if (xargv1[0]!='\0' && xargv1[1]!='\0') {
+
+		  klee_assume(new_argv[new_argc-1][1]==xargv1[0]
+				  || new_argv[new_argc-1][1]==xargv1[1]
+				  || new_argv[new_argc-1][1]==xargv1[2]
+				  || new_argv[new_argc-1][1]==xargv1[3]
+				  || new_argv[new_argc-1][1]==xargv1[4]
+#if 0
+#endif
+				  );
+	  }
+	  /*klee_assume(new_argv[new_argc-1][1]==xargv1[0]?xargv1[0]:false */
+			  /*|| new_argv[new_argc-1][1]==xargv1[1]?xargv1[1]:false*/
+			  /*|| new_argv[new_argc-1][1]==xargv1[2]?xargv1[2]:false*/
+			  /*|| new_argv[new_argc-1][1]==xargv1[3]?xargv1[3]:false*/
+			  /*|| new_argv[new_argc-1][1]==xargv1[4]?xargv1[4]:false*/
+			  /*); */
+	  klee_assume(new_argv[new_argc-1][2]=='\0'); 
+
+	  //add the other args, we assume the symbolic len is 4. it should be assigned by user 
+	  sym_arg_name[3] = '0' + sym_arg_num++;
+	  __add_arg(&new_argc, new_argv, 
+			  __get_sym_str(4, sym_arg_name),
+			  1024);
+	  klee_assume(new_argv[new_argc-1][3]=='\0'); 
+
+
+#if 0
 	  for ( i=0; i<xargs_num; i++,k++) {
 		  //for 3 case , a , a: , a::
 		  if(__strlen(argv[k]) == 1) {
@@ -268,6 +340,7 @@ usage: (klee_init_env) [options] [program arguments]\n\
 		  }
 
 	  }
+#endif
 	
 	}	
 #endif

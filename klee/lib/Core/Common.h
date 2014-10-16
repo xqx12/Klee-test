@@ -18,8 +18,11 @@
 
 //#define XQX_DEBUG
 //#define XQX_DEBUG_1
-//#define XQX_INFO
+#define XQX_INFO
 //#define XQX_DEBUG_ENV
+//#define XQX_DEBUG_STATE
+#define XQX_DEBUG_SHOW_EACH_FORK
+//#define XQX_DEBUG_FORK_DUMP_STACK
 
 #include <stdio.h>
 
@@ -43,6 +46,8 @@ namespace klee {
   void klee_xqx_debug(const char *msg, ...)
     __attribute__ ((format (printf, 1, 2)));
 
+  void klee_xqx_info(const char *msg, ...)
+    __attribute__ ((format (printf, 1, 2)));
 
   /// Print "KLEE: " followed by the msg in printf format and a
   /// newline to messages.txt.

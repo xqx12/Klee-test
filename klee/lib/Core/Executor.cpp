@@ -910,7 +910,7 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 		++stats::forks;
 #ifdef XQX_INFO
 		if (statsTracker){
-			uint64_t forknum = statsTracker->printForksStatInfo(current.prevPC);
+			uint64_t forknum = statsTracker->printForksStatInfo(&current);
 #ifdef XQX_DEBUG_1
 			if( forknum > 10) {
 				std::ostringstream msg;
@@ -2773,6 +2773,14 @@ void Executor::run(ExecutionState &initialState) {
 
 	while (!states.empty() && !haltExecution) {
 		ExecutionState &state = searcher->selectState();
+#ifdef XQX_DEBUG_STATE
+		static uint64_t old_id = 0; 
+		if( old_id != state.id) {
+			klee_xqx_debug("switch state[%d] to state[%d]", old_id, state.id);
+			old_id = state.id;
+		}
+#endif
+
 		KInstruction *ki = state.pc;
 		stepInstruction(state);
 
