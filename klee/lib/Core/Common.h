@@ -23,6 +23,8 @@
 //#define XQX_DEBUG_STATE
 #define XQX_DEBUG_SHOW_EACH_FORK
 //#define XQX_DEBUG_FORK_DUMP_STACK
+#define XQX_DEBUG_PRINT_RANGE
+#define XQX_CMA_CHECK
 
 #include <stdio.h>
 
@@ -32,6 +34,7 @@ namespace klee {
 
   extern FILE* klee_warning_file;
   extern FILE* klee_message_file;
+  extern FILE* klee_functions_file;
 
   /// Print "KLEE: ERROR" followed by the msg in printf format and a
   /// newline on stderr and to warnings.txt, then exit with an error.
@@ -41,6 +44,9 @@ namespace klee {
   /// Print "KLEE: " followed by the msg in printf format and a
   /// newline on stderr and to messages.txt.
   void klee_message(const char *msg, ...)
+    __attribute__ ((format (printf, 1, 2)));
+
+  void klee_record_func(const char *msg, ...)
     __attribute__ ((format (printf, 1, 2)));
 
   void klee_xqx_debug(const char *msg, ...)

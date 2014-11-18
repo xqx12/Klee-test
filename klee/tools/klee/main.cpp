@@ -157,7 +157,7 @@ namespace {
     cl::opt<bool>
         CheckOvershift("check-overshift",
                 cl::desc("Inject checks for overshift"),
-                cl::init(true));
+                cl::init(false));
 
     cl::opt<std::string>
         OutputDir("output-dir", 
@@ -349,7 +349,17 @@ KleeHandler::KleeHandler(int argc, char **argv)
         if ((klee_message_file = fopen(file_path.c_str(), "w")) == NULL)
             klee_error("cannot open file \"%s\": %s", file_path.c_str(), strerror(errno));
 
+		//snprintf(fname, sizeof(fname), "functions%s/functions.txt", m_outputDirectory);
+        file_path = getOutputFilename("functions.txt");
+		klee_functions_file = fopen(file_path.c_str(), "w");
+		if (!klee_functions_file)
+            klee_error("cannot open file \"%s\": %s", file_path.c_str(), strerror(errno));
+			//perror("fopen");
+		assert(klee_functions_file);
+
+
         m_infoFile = openOutputFile("info");
+
     }
 
 KleeHandler::~KleeHandler() {
@@ -1173,7 +1183,7 @@ int main(int argc, char **argv, char **envp) {
 #endif
 
 	xPathAnalysisPrint();
-    klee_message("[xqx]klee main : ");
+    klee_message("[xqx]klee main 111: ");
 
     atexit(llvm_shutdown);  // Call llvm_shutdown() on exit.
 

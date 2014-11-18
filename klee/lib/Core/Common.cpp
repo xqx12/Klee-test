@@ -22,6 +22,7 @@ using namespace klee;
 
 FILE* klee::klee_warning_file = NULL;
 FILE* klee::klee_message_file = NULL;
+FILE* klee::klee_functions_file = NULL;
 
 static void klee_vfmessage(FILE *fp, const char *pfx, const char *msg, 
                            va_list ap) {
@@ -35,6 +36,17 @@ static void klee_vfmessage(FILE *fp, const char *pfx, const char *msg,
   fflush(fp);
 }
 
+static void klee_fmessage(FILE *fp, const char *pfx, const char *msg, 
+                           va_list ap) {
+  if (!fp)
+    return;
+
+  //fprintf(fp, "KLEE: ");
+  if (pfx) fprintf(fp, "%s: ", pfx);
+  vfprintf(fp, msg, ap);
+  fprintf(fp, "\n");
+  fflush(fp);
+}
 /* Prints a message/warning.
    
    If pfx is NULL, this is a regular message, and it's sent to
@@ -60,6 +72,13 @@ void klee::klee_message(const char *msg, ...) {
   va_list ap;
   va_start(ap, msg);
   klee_vmessage(NULL, false, msg, ap);
+  va_end(ap);
+}
+
+void klee::klee_record_func(const char *msg, ...) {
+  va_list ap;
+  va_start(ap, msg);
+  klee_fmessage(klee_functions_file, false, msg, ap);
   va_end(ap);
 }
 

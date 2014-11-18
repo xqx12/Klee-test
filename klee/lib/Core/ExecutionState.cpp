@@ -129,6 +129,7 @@ ExecutionState::ExecutionState(const ExecutionState& state)
     arrayNames(state.arrayNames),
     shadowObjects(state.shadowObjects),
 	id(state.id),
+	stateRange(state.stateRange),
     incomingBBIndex(state.incomingBBIndex)
 {
   for (unsigned int i=0; i<symbolics.size(); i++)

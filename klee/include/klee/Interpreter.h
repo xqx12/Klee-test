@@ -19,12 +19,17 @@ struct KTest;
 namespace llvm {
 class Function;
 class Module;
+class Instruction;
 }
+
+using namespace llvm;
 
 namespace klee {
 class ExecutionState;
 class Interpreter;
 class TreeStreamWriter;
+class Expr;
+template<class T> class ref;
 
 class InterpreterHandler {
 public:
@@ -44,6 +49,15 @@ public:
 };
 
 class Interpreter {
+public:
+	//inst and state id  addbyxqx201410
+  typedef std::pair<unsigned int, Instruction*> TySKiID;    //<stateid, ki>
+  typedef std::pair< ref<Expr>, ref<Expr> > TySizeRange; // <min, max>
+  typedef std::map <TySKiID, TySizeRange> TyKIRange;
+  TyKIRange *allocSizeRange;
+
+
+
 public:
   /// ModuleOptions - Module level options which can be set when
   /// registering a module with the interpreter.

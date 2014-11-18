@@ -399,7 +399,11 @@ private:
                 
   bool doSizeControlledMalloc(ExecutionState &state,
 		  KInstruction *target,
-		  ref<Expr> size	);
+		  ref<Expr> size,	
+		  bool isLocal,
+		  bool zeroMemory,
+		  const ObjectState *reallocFrom);
+
 public:
   Executor(const InterpreterOptions &opts, InterpreterHandler *ie);
   virtual ~Executor();

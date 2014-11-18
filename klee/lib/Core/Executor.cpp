@@ -1237,6 +1237,16 @@ void Executor::stepInstruction(ExecutionState &state) {
 		std::cerr << std::setw(10) << stats::instructions << " ";
 		llvm::errs() << *(state.pc->inst) << '\n';
 	}
+//#define XQX_DEBUG_INSTS	
+#ifdef XQX_DEBUG_INSTS
+	if( stats::instructions % 10000 == 0 || stats::instructions > 750000 )
+	{
+		printFileLine(state, state.pc);
+		std::cerr << std::setw(10) << stats::instructions << " ";
+		llvm::errs() << *(state.pc->inst) << "in state[" << state.id << "]" << '\n';
+	}
+#endif	
+
 
 	if (statsTracker)
 		statsTracker->stepInstruction(state);
@@ -1258,6 +1268,50 @@ void Executor::executeCall(ExecutionState &state,
 		KInstruction *ki,
 		Function *f,
 		std::vector< ref<Expr> > &arguments) {
+
+
+#define XQX_DUMP_FUNCS
+#define XQX_DUMP_ARGS
+#ifdef XQX_DUMP_FUNCS
+	//if(VisitedFuncs.insert(f))
+		//klee_record_func("%s", f->getName().str().c_str());
+
+	//if( ki->info->file.find("uclibc") == std::string::npos 
+			////&& ki->info->file.find("POSIX")== std::string::npos
+			//) 
+	{
+
+		std::string filename;
+		unsigned pos = ki->info->file.find_last_of("/\\");
+		filename = ki->info->file.substr(pos+1);
+
+		std::ostringstream info;
+		for( int i=0; i<state.stack.size(); i++) {
+			info << "|\t";
+		}
+		info << state.stack.size() << "|\t";
+		klee_record_func("%s-%s -- %s:%d  s[%d]", info.str().c_str(), f->getName().str().c_str(), 
+				filename.c_str(), ki->info->line, state.id);
+#if 0
+		if( f->getName().str() == "open" && first) {
+			klee_xqx_debug("%s-%s -- %s:%d", info.str().c_str(), f->getName().str().c_str(), 
+					filename.c_str(), ki->info->line);
+			executeOpen = true;
+			first = false;
+
+		}
+#endif
+#ifdef XQX_DUMP_ARGS
+		std::ostringstream argsinfo;
+		for (unsigned j=0; j<arguments.size(); ++j)
+			argsinfo << "args[" << j << "]: " << arguments[j] << "\n";
+
+		klee_record_func("%s", argsinfo.str().c_str());
+#endif
+	}
+#endif
+ 
+
 	Instruction *i = ki->inst;
 	if (f && f->isDeclaration()) {
 		//klee_message("[xqx]: executeCall which is declaration, func = %s ", f->getName().data());
@@ -3215,15 +3269,15 @@ void Executor::executeAlloc(ExecutionState &state,
 		}
 	}
 	else {
-
+#ifdef XQX_CMA_CHECK
 		//
 		//  if the size of malloc could be controlled, will generate a testcase 
 		//      and terminateState
 		//  Copyright: addbyxqx 2014年02月17日 15时24分26秒
 		//
-		if ( doSizeControlledMalloc(state, target, size) )
+		if ( doSizeControlledMalloc(state, target, size, isLocal, zeroMemory, reallocFrom) )
 			return;
-		
+#else	
 		// XXX For now we just pick a size. Ideally we would support
 		// symbolic sizes fully but even if we don't it would be better to
 		// "smartly" pick a value, for example we could fork and pick the
@@ -3340,6 +3394,7 @@ void Executor::executeAlloc(ExecutionState &state,
 			executeAlloc(*fixedSize.first, example, isLocal, 
 					target, zeroMemory, reallocFrom);
 		}
+#endif
 	}
 }
 
@@ -3905,15 +3960,18 @@ Expr::Width Executor::getWidthForLLVMType(LLVM_TYPE_Q llvm::Type *type) const {
  */
 bool Executor::doSizeControlledMalloc(ExecutionState &state,
 		KInstruction *target,
-		ref<Expr> size	)
+		ref<Expr> size,
+		bool isLocal,
+		bool zeroMemory,
+		const ObjectState *reallocFrom)
 {
 
-	//klee_message("[xqx]===doSizeControlledMalloc=================");
+	klee_message("[xqx]===doSizeControlledMalloc=================");
  
 	Instruction *i = target->inst;
 	//i->dump();
 	Function *TmpF = i->getParent()->getParent();
-	klee_message("Func: %s", TmpF->getName().data());
+	//klee_message("Func: %s", TmpF->getName().data());
 
 	CallSite cs(i);
 	Value *fp = cs.getCalledValue();
@@ -3924,78 +3982,170 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 	}
 	klee_message("calledFunc: %s", fc->getName().data());
 
-	if( fc->getName() != "malloc" &&
-		fc->getName() != "realloc" &&
-		fc->getName() != "xmalloc" &&
-		fc->getName() != "xrealloc"
-			){
-		// not care, give back to klee.
-		return false;
-	}
+	//we assume the alloc* functions are the memory allocation function.
+	//if( fc->getName().str().find("alloc") == std::string::npos ){
+		//return false;
+	//}
 
+	klee_message("  [xqx] calledfunc = %s", fc->getName().data());
 	printFileLine(state, target);
-	klee_message("  [xqx] allocfileline");
+	i->dump();
 
-	
-
-	//ref<ConstantExpr> example;
-	//bool success = solver->getValue(state, size, example);
-	//assert(success && "FIXME: Unhandled solver failure");
-	//(void) success;
-	//Expr::Width W = example->getWidth();
- 
-  
-	ref<Expr> isZeroSize = EqExpr::create(size, 
-			ConstantExpr::create(0,size->getWidth()));
-//	ref<ConstantExpr> tmpZeroValue;
-
-	//klee_message("[xqx]===size expr:================");
-	//size->dump();
-	//klee_message("[xqx]===size=0 expr:================");
-	//isZeroSize->dump();
-
-	bool bZero ;
-	bool success = solver->mayBeTrue(state, isZeroSize, bZero );
-	assert(success && "FIXME: Unhandled solver failure");      
-	(void) success;
-
+#ifdef XQX_DEBUG_PRINT_RANGE
+	klee_message("[xqx]solver range of size in state[%d]-----------", state.id);
+	size->dump();
+	std::pair< ref<Expr>, ref<Expr> > range;
+	range = solver->solver->getRange(Query(state.constraints, size));
+	klee_message("[xqx]min size is:");
+	range.first->dump();
+	klee_message("[xqx]max size is:");
+	range.second->dump();
+	//insert range to the map
+	state.stateRange = range;
+	//allocSizeRange->insert(std::make_pair(std::make_pair((unsigned int)(state.id),i),
+									//range));
+#endif
+#if 1
 	std::ostringstream xinfo;
 	ExprPPrinter::printOne(xinfo, "  size expr", size);
 	xinfo << "Stack: \n";
 	state.dumpStack(xinfo);
+#endif
+
+	//if there could be zero
+	klee_message("[xqx] size width is %d", size->getWidth());
+	ref<Expr> eqZeroSize = EqExpr::create(size, 
+			ConstantExpr::create(0,size->getWidth()));
+
+	bool bZero ;
+	bool success = solver->mayBeTrue(state, eqZeroSize, bZero );
+	assert(success && "FIXME: Unhandled solver failure");      
+	(void) success;
+
 
 	//FIXME : it will be integer overflow check first
-
+#if 0
 	if(bZero){
-		//klee_message( "[xqx] mayBeTrue, may be Zero");      
-		addConstraint(state, isZeroSize);
-		terminateStateOnError(state, 
-				"malloc zero size", 
-				"zero-size-malloc.err", 
-				xinfo.str());
-		return true;
+#endif
+		StatePair zeroSize = fork(state, eqZeroSize, true);
+		if(zeroSize.first) {
+#if 1
+			std::ostringstream info;
+			ExprPPrinter::printOne(info, "  size expr", size);
+			info << "Stack: \n";
+			zeroSize.first->dumpStack(info);
+#endif
+
+			terminateStateOnError(*zeroSize.first, 
+					"malloc zero size", 
+					"zma.err", 
+					info.str());
+		}
+		if(zeroSize.second) {
+			//size not eq zero, see if gt 0xffffffff
+			Expr::Width W = size->getWidth();
+#ifdef XQX_DEBUG_CMA
+			ref<Expr> ltmax = UltExpr::create(ConstantExpr::alloc(0xffffffff, W), size);
+			klee_message("[xqx] create lt max expr, size width is %d", size->getWidth());
+			ltmax->dump();
+#endif
+			StatePair iofSize = 
+				fork(*zeroSize.second, 
+						UltExpr::create(ConstantExpr::alloc(0xffffffff, W), size), 
+						true);
+			if( iofSize.first ) {
+				klee_message("[xqx] found integer overflow, terminate state[%d]",iofSize.first->id);
+				terminateStateOnError(*iofSize.first, 
+						"integer overflow size", 
+						"iof.err", 
+						xinfo.str());
+			}
+			if ( iofSize.second ) {
+
+				// See if a *really* big value is possible. If so assume
+				// malloc will fail for it, so lets fork and return 0.
+				StatePair hugeSize = 
+					fork(*iofSize.second, 
+							UltExpr::create(ConstantExpr::alloc(1<<15, W), size), 
+							true);
+				if (hugeSize.first) {
+					klee_message("NOTE: found huge malloc, returning 0 in state[%d]",hugeSize.first->id);
+					bindLocal(target, *hugeSize.first, 
+							ConstantExpr::alloc(0, Context::get().getPointerWidth()));
+				}
+
+				if (hugeSize.second) {
+					ref<ConstantExpr> example;
+					bool success = solver->getValue(state, size, example);
+					assert(success && "FIXME: Unhandled solver failure");
+					(void) success;
+
+					// Try and start with a small example.
+					Expr::Width W = example->getWidth();
+					while (example->Ugt(ConstantExpr::alloc(128, W))->isTrue()) {
+						ref<ConstantExpr> tmp = example->LShr(ConstantExpr::alloc(1, W));
+						bool res;
+						bool success = solver->mayBeTrue(state, EqExpr::create(tmp, size), res);
+						assert(success && "FIXME: Unhandled solver failure");      
+						(void) success;
+						if (!res)
+							break;
+						example = tmp;
+					}
+
+					StatePair fixedSize = fork(*hugeSize.second, EqExpr::create(example, size), true);
+					if( fixedSize.second ) {
+						klee_message("[xqx] found cma in state[%d]",fixedSize.second->id);
+						std::ostringstream info;
+						ExprPPrinter::printOne(info, "  size expr", size);
+						info << "  concretization : " << example << "\n";
+						//info << "  unbound example: " << tmp << "\n";
+						//info << "Stack: \n";
+						//state.dumpStack(info);
+#ifdef XQX_DEBUG_PRINT_RANGE
+						klee_message("[xqx] range of size in state[%d]-----------", fixedSize.second->id);
+						klee_message("[xqx]min size is:");
+						fixedSize.second->stateRange.first->dump();
+						klee_message("[xqx]max size is:");
+						fixedSize.second->stateRange.second->dump();
+#endif
+
+						terminateStateOnError(*fixedSize.second, 
+								"controlled symbolic size", 
+								"cma.err", 
+								info.str());
+					}
+					if (fixedSize.first) // can be zero when fork fails
+					{
+						std::ostringstream info;
+						info << "[xqx] concretizating a size " << example << " in state[" << fixedSize.second->id << "]\n"  ;
+						std::string msg = info.str();
+						klee_message(msg.c_str());
+						executeAlloc(*fixedSize.first, example, isLocal, 
+								target, zeroMemory, reallocFrom);
+					}
+
+				}
+
+			}
+
+		}
+#if 0
 	}
 	else {
-#ifdef XQX_DEBUG
-		klee_xqx_debug("solver range of size -----------");
-		std::pair< ref<Expr>, ref<Expr> > range;
-		range = solver->solver->getRange(Query(state.constraints, size));
-		klee_xqx_debug("min size is:");
-			range.first->dump();
-		klee_xqx_debug("max size is:");
-			range.second->dump();
-#endif
+
 		terminateStateOnError(state, 
 				"malloc symbolic size", 
-				"size-controlled-malloc.err", 
+				"scma.err", 
 				xinfo.str());
 	}
-
+#endif
 	//klee_message("[xqx]---doSizeControlledMalloc-----------------");
 
 	return true;
 
 }
+
 ///
 
 void Executor::printStatsInfoWithSrcLine()

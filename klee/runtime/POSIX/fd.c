@@ -178,7 +178,8 @@ int __fd_open(const char *pathname, int flags, mode_t mode) {
     else
       f->dfile->stat->st_mode = ((f->dfile->stat->st_mode & ~0777) |
 				 (mode & ~__exe_env.umask));
-  } else {    
+  } 
+  else {    
     int os_fd = syscall(__NR_open, __concretize_string(pathname), flags, mode);
     if (os_fd == -1) {
       errno = klee_get_errno();

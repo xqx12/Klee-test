@@ -73,6 +73,8 @@ private:
 public:
   // id of the state, increment by fork, addbyxqx201409
   uint64_t id;
+  std::pair< ref<Expr>, ref<Expr> > stateRange;
+
   bool fakeState;
   // Are we currently underconstrained?  Hack: value is size to make fake
   // objects.
