@@ -11,10 +11,12 @@
 
 #include <klee/Expr.h>
 #include <klee/util/ExprPPrinter.h>
+#include "klee/ExecutionState.h"
 
 #include <vector>
 #include <iostream>
 
+#define XQX_DUMP_PTREE_COND
 using namespace klee;
 
   /* *** */
@@ -27,10 +29,14 @@ PTree::~PTree() {}
 std::pair<PTreeNode*, PTreeNode*>
 PTree::split(Node *n, 
              const data_type &leftData, 
-             const data_type &rightData) {
+             const data_type &rightData,
+			 ref<Expr> cond) {
   assert(n && !n->left && !n->right);
   n->left = new Node(n, leftData);
   n->right = new Node(n, rightData);
+#ifdef XQX_DUMP_PTREE_COND
+  n->condition = cond;
+#endif
   return std::make_pair(n->left, n->right);
 }
 
@@ -51,7 +57,7 @@ void PTree::remove(Node *n) {
   } while (n && !n->left && !n->right);
 }
 
-void PTree::dump(std::ostream &os) {
+void PTree::dump(std::ostream &os, bool dumpCond) {
   ExprPPrinter *pp = ExprPPrinter::create(os);
   pp->setNewline("\\l");
   os << "digraph G {\n";
@@ -66,13 +72,20 @@ void PTree::dump(std::ostream &os) {
   while (!stack.empty()) {
     PTree::Node *n = stack.back();
     stack.pop_back();
-    if (n->condition.isNull()) {
-      os << "\tn" << n << " [label=\"\"";
-    } else {
-      os << "\tn" << n << " [label=\"";
-      pp->print(n->condition);
-      os << "\",shape=diamond";
-    }
+
+	if(n->data)
+		os << "\tn" << n << " [label=\"state[" << n->data->id   << "]";
+	else 
+		os << "\tn" << n << " [label=\"";
+
+	if (!n->condition.isNull()) {
+		if( dumpCond )
+			pp->print(n->condition);
+		os << "\",shape=diamond";
+	}
+	else
+		os << "\"";
+
     if (n->data)
       os << ",fillcolor=green";
     os << "];\n";

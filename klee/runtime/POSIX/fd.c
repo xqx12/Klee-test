@@ -29,12 +29,19 @@
 #include <sys/select.h>
 #include <klee/klee.h>
 
+#include <stdbool.h>
+
 /* #define DEBUG */
 
 void klee_warning(const char*);
 void klee_warning_once(const char*);
 int klee_get_errno(void);
 
+static void *__concretize_ptr(const void *p);
+static size_t __concretize_size(size_t s);
+static const char *__concretize_string(const char *s);
+
+#if 0
 /* Returns pointer to the symbolic file structure fs the pathname is symbolic */
 static exe_disk_file_t *__get_sym_file(const char *pathname) {
   char c = pathname[0];
@@ -54,10 +61,78 @@ static exe_disk_file_t *__get_sym_file(const char *pathname) {
   
   return NULL;
 }
+#endif
 
-static void *__concretize_ptr(const void *p);
-static size_t __concretize_size(size_t s);
-static const char *__concretize_string(const char *s);
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  __xqx_get_sym_file
+ *  Description:  including get_sym_file and add symbolic file with concrete path 
+ *  Copyright: addbyxqx 2014年11月19日 08时50分24秒
+ * =====================================================================================
+ */
+static exe_disk_file_t *__xqx_get_sym_file(const char *pathname, bool cp_sym, unsigned flags) {
+  char c ;
+  unsigned i;
+
+  if (!pathname || !pathname[0] )
+    return NULL;
+
+  //is concrete path
+  if( !klee_is_symbolic(pathname[0]) && cp_sym ){
+	  fprintf(stderr, "open cp file symbolic: %s \n", pathname);
+	  /*const char* concrete_path = __concretize_string(pathname);*/
+	  const char* concrete_path = pathname;
+	  exe_disk_file_t *df = NULL;
+
+#define XQX_TEST_PNG
+#ifdef XQX_TEST_PNG
+	  fprintf(stderr, "specified file is : %s" , __sym_parts.path);
+	  /*if( strcmp(concrete_path, "/tmp/pngtest.png") != 0 ) */
+	  if(!__sym_parts.path || strcmp(concrete_path, __sym_parts.path) != 0 ) 
+		  return NULL;
+
+#endif
+
+	  for (i=0; i<__exe_fs.n_cp_files; ++i) {
+		  if (__exe_fs.cp_files[i].path && 0 == strcmp(__exe_fs.cp_files[i].path, pathname)) 
+		  {
+			  df = &__exe_fs.cp_files[i];
+			  break;
+		  }
+	  }
+	  if( !df ) {
+		  df = klee_create_cp_file(concrete_path, flags);
+		  if (!df)
+			  klee_warning("Unable to open concrete file symbolic.");
+
+		  return df;
+	  }
+
+	  return NULL;
+  }
+
+
+  for (i=0; i<__exe_fs.n_sym_files; ++i) {
+    if (c == 'A' + (char) i) {
+      exe_disk_file_t *df = &__exe_fs.sym_files[i];
+      if (df->stat->st_ino == 0)
+        return NULL;
+      return df;
+    }
+  }
+ 
+  return NULL;
+
+}
+
+
+static exe_disk_file_t *__get_sym_file(const char *pathname) {
+	return __xqx_get_sym_file(pathname, false, 0 );
+}
+
+
+
 
 /* Returns pointer to the file entry for a valid fd */
 static exe_file_t *__get_file(int fd) {
@@ -144,7 +219,10 @@ int __fd_open(const char *pathname, int flags, mode_t mode) {
   /* Should be the case if file was available, but just in case. */
   memset(f, 0, sizeof *f);
 
-  df = __get_sym_file(pathname); 
+  /*df = __get_sym_file(pathname); */
+  /*df = __xqx_get_sym_file(pathname, (flags & O_ACCMODE) == O_RDONLY, flags );*/
+  df = __xqx_get_sym_file(pathname, true, flags );
+
   if (df) {    
     /* XXX Should check access against mode / stat / possible
        deletion. */
@@ -1470,3 +1548,5 @@ int chroot(const char *path) {
   errno = ENOENT;
   return -1;
 }
+
+

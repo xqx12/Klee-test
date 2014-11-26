@@ -31,10 +31,11 @@ namespace klee {
     
     std::pair<Node*,Node*> split(Node *n,
                                  const data_type &leftData,
-                                 const data_type &rightData);
+                                 const data_type &rightData,
+								 ref<Expr> cond=NULL);
     void remove(Node *n);
 
-    void dump(std::ostream &os);
+    void dump(std::ostream &os, bool dumpCond=false);
   };
 
   class PTreeNode {

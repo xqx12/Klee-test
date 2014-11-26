@@ -261,6 +261,22 @@ namespace {
 		MaxMemoryInhibit("max-memory-inhibit",
 				cl::desc("Inhibit forking at memory cap (vs. random terminate) (default=on)"),
 				cl::init(true));
+
+	cl::opt<bool>
+		DumpPtreeOnTerminate("dump-ptree-on-terminate",
+				cl::init(false),
+				cl::desc("Dump states forking graph in ptree (default=off)"));
+
+	cl::opt<bool>
+		DumpPtreeCond("dump-ptree-cond",
+				cl::init(false),
+				cl::desc("Dump states forking condition in ptree dot graph (default=off)"));
+
+	cl::opt<unsigned>
+		DebugInstructions("debug-insts-num",
+				cl::desc("print debug info (inst) when debug-insts-num insts be executed"),
+				cl::init(0));
+
 }
 
 
@@ -671,7 +687,7 @@ void Executor::branch(ExecutionState &state,
 			result.push_back(ns);
 			es->ptreeNode->data = 0;
 			std::pair<PTree::Node*,PTree::Node*> res = 
-				processTree->split(es->ptreeNode, ns, es);
+				processTree->split(es->ptreeNode, ns, es, conditions[i]);
 			ns->ptreeNode = res.first;
 			es->ptreeNode = res.second;
 		}
@@ -975,7 +991,7 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 
 		current.ptreeNode->data = 0;
 		std::pair<PTree::Node*, PTree::Node*> res =
-			processTree->split(current.ptreeNode, falseState, trueState);
+			processTree->split(current.ptreeNode, falseState, trueState, condition);
 		falseState->ptreeNode = res.first;
 		trueState->ptreeNode = res.second;
 
@@ -1200,7 +1216,8 @@ void Executor::executeGetValue(ExecutionState &state,
 		assert(success && "FIXME: Unhandled solver failure");
 		(void) success;
 		bindLocal(target, state, value);
-	} else {
+	}
+	else {
 		std::set< ref<Expr> > values;
 		for (std::vector<SeedInfo>::iterator siit = it->second.begin(), 
 				siie = it->second.end(); siit != siie; ++siit) {
@@ -1237,10 +1254,11 @@ void Executor::stepInstruction(ExecutionState &state) {
 		std::cerr << std::setw(10) << stats::instructions << " ";
 		llvm::errs() << *(state.pc->inst) << '\n';
 	}
-//#define XQX_DEBUG_INSTS	
+#define XQX_DEBUG_INSTS	
 #ifdef XQX_DEBUG_INSTS
-	if( stats::instructions % 10000 == 0 || stats::instructions > 750000 )
+	if( DebugInstructions != 0 && stats::instructions % DebugInstructions == 0 /*|| stats::instructions > 750000 */)
 	{
+		klee_xqx_debug("----------%d states left------------", states.size());
 		printFileLine(state, state.pc);
 		std::cerr << std::setw(10) << stats::instructions << " ";
 		llvm::errs() << *(state.pc->inst) << "in state[" << state.id << "]" << '\n';
@@ -1490,11 +1508,12 @@ void Executor::transferToBasicBlock(BasicBlock *dst, BasicBlock *src,
 }
 
 void Executor::printFileLine(ExecutionState &state, KInstruction *ki) {
+	Function *f = ki->inst->getParent()->getParent();
 	const InstructionInfo &ii = *ki->info;
 	if (ii.file != "") 
-		std::cerr << "     " << ii.file << ":" << ii.line << ":";
+		std::cerr << "loc: " << f->getName().str() << " - " << ii.file << ":" << ii.line << ":"  << "\n";
 	else
-		std::cerr << "     [no debug info]:";
+		std::cerr << "loc: " << f->getName().str() << " - " << "     [no debug info]:\n";
 }
 
 /// Compute the true target of a function call, resolving LLVM and KLEE aliases
@@ -2960,6 +2979,20 @@ void Executor::terminateState(ExecutionState &state) {
 #ifdef XQX_INFO
 	klee_xqx_debug("state[%d] terminated", state.id);
 #endif
+#define XQX_DUMP_PTREE
+#ifdef XQX_DUMP_PTREE
+	if(DumpPtreeOnTerminate) {
+      char name[32];
+      sprintf(name, "ptree%08d.dot", (int) state.id);
+      std::ostream *os = interpreterHandler->openOutputFile(name);
+      if (os) {
+        processTree->dump(*os,DumpPtreeCond|DumpPtreeOnTerminate);
+        delete os;
+      }
+	}
+#endif
+
+
 	std::set<ExecutionState*>::iterator it = addedStates.find(&state);
 	if (it==addedStates.end()) {
 		state.pc = state.prevPC;
@@ -3462,26 +3495,32 @@ void Executor::resolveExact(ExecutionState &state,
 				getAddressInfo(*unbound, p));
 	}
 }
-
+//#define xDEBUG
 void Executor::executeMemoryOperation(ExecutionState &state,
 		bool isWrite,
 		ref<Expr> address,
 		ref<Expr> value /* undef if read */,
 		KInstruction *target /* undef if write */) {
 #ifdef xDEBUG
-	klee_message("[xqx]:--executeMemoryOperation--called ");
+	klee_message("[xqx]:--executeMemoryOperation-- in state[%d] ", state.id);
+	printFileLine(state, state.prevPC);
+	std::ostringstream info;
+	info << "inst:" << std::setw(10) << stats::instructions << " \n";
 	if(target != NULL){
-		Instruction *i = target->inst;
-		i->dump();
-		klee_message("read from ");
-		address->dump();
+		//Instruction *i = target->inst;
+		//i->dump();
+		//klee_message("read from ");
+		//address->dump();
+		info << std::hex << "read from " << address << "\n";
 	}
 	else 
 	{
-		value->dump();
-		klee_message("write to ");
-		address->dump();
+		//value->dump();
+		//klee_message("write to ");
+		//address->dump();
+		info << std::hex << "write " << value << " to " << address << "\n";
 	}
+	klee_message("%s", info.str().c_str());
 #endif
 	Expr::Width type = (isWrite ? value->getWidth() : 
 			getWidthForLLVMType(target->inst->getType()));
@@ -3508,6 +3547,7 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 		address = toConstant(state, address, "resolveOne failure");
 		success = state.addressSpace.resolveOne(cast<ConstantExpr>(address), op);
 	}
+#undef xDEBUG
 #ifdef xDEBUG
 	klee_message("[xqx]--addressSpace.objects.size() = %d", state.addressSpace.objects.size());
 	const MemoryObject *tmpMo = op.first;

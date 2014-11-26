@@ -133,6 +133,7 @@ void klee_init_env(int* argcPtr, char*** argvPtr) {
   __set_zero(xargv1,10);
   __set_zero(xargv2,10);
   
+  unsigned n_sym_file = 0;
 
   sym_arg_name[4] = '\0';
 
@@ -345,6 +346,28 @@ usage: (klee_init_env) [options] [program arguments]\n\
 	}	
 #endif
 
+    else if (__streq(argv[k], "--xqx-sym-file") || __streq(argv[k], "-xqx-sym-file")) {
+	  const char* msg = "--xqx-sym-files expects three integer arguments name offset len method";      
+		
+      if (k+4 >= argc)
+		  __emit_error(msg);
+      
+      k++;
+	  int len = __strlen(argv[k]);
+	  char *pathname = malloc(len+1);
+	  memcpy(pathname, argv[k], len);
+	  pathname[len] = 0;
+	  __sym_parts.path = pathname;
+	  k++;
+
+      __sym_parts.sym_buf[n_sym_file].offset = __str_to_int(argv[k++], msg);
+      __sym_parts.sym_buf[n_sym_file].length = __str_to_int(argv[k++], msg);
+      __sym_parts.fill_method = __str_to_int(argv[k++], msg);
+	  
+	  __sym_parts.num = n_sym_file++;
+
+
+	}
     else {
       /* simply copy arguments */
       __add_arg(&new_argc, new_argv, argv[k++], 1024);

@@ -209,6 +209,16 @@ namespace {
         Watchdog("watchdog",
                 cl::desc("Use a watchdog process to enforce --max-time."),
                 cl::init(0));
+
+	cl::opt<bool>
+		LibRuntime("xlib", 
+				cl::desc("Link with lib*.bca"),
+				cl::init(false));
+
+	cl::opt<std::string>
+		LibPathFile("lib-path",
+				cl::desc("Specify a path file of lib*.bca"),
+				cl::value_desc("path of the lib file"));
 }
 
 extern cl::opt<double> MaxTime;
@@ -1320,6 +1330,23 @@ int main(int argc, char **argv, char **envp) {
         mainModule = klee::linkWithLibrary(mainModule, Path.c_str());
         assert(mainModule && "unable to link with simple model");
     }  
+
+
+  if( LibRuntime ) {
+	  klee_message("XQX: using lib %s", LibPathFile.c_str());
+	  mainModule = klee::linkWithLibrary(mainModule, LibPathFile);
+	  assert(mainModule && "unable to link with libpng");
+
+  }
+
+  std::string libz = "/home/xqx/data/xqx/projects/benckmarks-klee/zlib-1.2.8/build-wllvm/lib/libz.bca";
+  if( LibRuntime ) {
+	  klee_message("XQX: using lib %s", libz.c_str());
+	  mainModule = klee::linkWithLibrary(mainModule, libz);
+	  assert(mainModule && "unable to link with libz");
+
+  }
+
 
     // Get the desired main function.  klee_main initializes uClibc
     // locale and other data and then calls main.

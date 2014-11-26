@@ -20,6 +20,7 @@
 typedef struct {  
   unsigned size;  /* in bytes */
   char* contents;
+  char* path;   //addbyxqx201411 path for concrete path
   struct stat64* stat;
 } exe_disk_file_t;
 
@@ -44,6 +45,9 @@ typedef struct {
   exe_disk_file_t *sym_stdin, *sym_stdout;
   unsigned stdout_writes; /* how many chars were written to stdout */
   exe_disk_file_t *sym_files;
+
+  unsigned n_cp_files; /* number of concrete path input files */
+  exe_disk_file_t *cp_files;
   /* --- */
   /* the maximum number of failures on one path; gets decremented after each failure */
   unsigned max_failures; 
@@ -68,8 +72,21 @@ typedef struct {
   int save_all_writes; 
 } exe_sym_env_t;
 
+typedef struct {
+	unsigned offset;
+	unsigned length;
+}xqx_sym_buf_t;
+
+typedef struct {
+	char *path;
+	unsigned num;
+	enum { fill_concrete, fill_assume, fill_sym } fill_method;
+	xqx_sym_buf_t sym_buf[5];
+}xqx_make_sym_t;
+
 extern exe_file_system_t __exe_fs;
 extern exe_sym_env_t __exe_env;
+extern xqx_make_sym_t __sym_parts;
 
 void klee_init_fds(unsigned n_files, unsigned file_length, 
 		   int sym_stdout_flag, int do_all_writes_flag, 
@@ -87,5 +104,11 @@ int __fd_fstat(int fd, struct stat64 *buf);
 int __fd_ftruncate(int fd, off64_t length);
 int __fd_statfs(const char *path, struct statfs *buf);
 int __fd_getdents(unsigned int fd, struct dirent64 *dirp, unsigned int count);
+
+
+int native_read_file(const char* path, int flags, char** _buf);
+exe_disk_file_t* klee_create_cp_file(const char* path, int flags);
+void __xqx_make_file_symbolic(exe_disk_file_t* dfile, char* orig_content, const xqx_make_sym_t* sym_info, unsigned n_syms);
+
 
 #endif /* __EXE_FD__ */
