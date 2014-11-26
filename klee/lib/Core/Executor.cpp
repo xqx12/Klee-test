@@ -4192,6 +4192,110 @@ void Executor::printStatsInfoWithSrcLine()
 {
 	if (statsTracker)
 		statsTracker->printStatsInfo(stats::forks);
+ }
+
+void Executor::xRunFunction(Function *f)
+{
+	std::vector<ref<Expr> > arguments;
+
+	// force deterministic initialization of memory objects
+	srand(1);
+	srandom(1);
+
+	unsigned NumPtrBytes = Context::get().getPointerWidth() / 8;
+	KFunction *kf = kmodule->functionMap[f];
+	assert(kf);
+
+	ExecutionState *state = new ExecutionState(kmodule->functionMap[f]);
+	if (pathWriter) 
+		state->pathOS = pathWriter->open();
+	if (symPathWriter) 
+		state->symPathOS = symPathWriter->open();
+	if (statsTracker)
+		statsTracker->framePushed(*state, 0);
+
+
+	Function::arg_iterator ai = f->arg_begin(), ae = f->arg_end();
+	for( ; ai != ae ; ai++) {
+		const llvm::Type *type = ai->getType();
+		llvm::Type::TypeID tid = type->getTypeID();
+
+		std::string name = ai->getNameStr();
+		std::string typeDesc = type->getDescription();
+		klee_xqx_debug("name: %s, typedes:%s", name.c_str(), typeDesc.c_str());
+
+		MemoryObject *mo;
+		ObjectState *os;
+		switch(tid) {
+		case llvm::Type::IntegerTyID:
+			//symbolic expr
+			mo = memory->allocate(8*8, false, true, f->begin()->begin());
+			os = bindObjectInState(*state, mo, false);
+			if (type->isIntegerTy(32)) {
+				arguments.push_back(ConstantExpr::alloc(1, Expr::Int32));
+			}
+			else if (type->isIntegerTy(64)) {
+				arguments.push_back(ConstantExpr::alloc(1, Expr::Int64));
+				/*
+				 *arguments.push_back(os->read(0, 64));
+				 *os->read(0, 64)->dump();
+				 */
+			}
+			else {
+				klee_error("Value's type is integer, but is not 32 or 64 bit.");
+				printf("--- Cut here ---\n");
+				ai->dump();
+				printf("--- End ---\n");
+			}
+			klee_xqx_debug("TypeID: %d", ai->getType()->getTypeID());
+			klee_xqx_debug("rawTypeID: %d", ai->getRawType()->getTypeID());
+			break;
+		case llvm::Type::PointerTyID:
+			mo = memory->allocate(100, false, true, f->begin()->begin());
+			arguments.push_back(Expr::createPointer(mo->address));
+			os = bindObjectInState(*state, mo, false);
+			os->write(1 * NumPtrBytes, mo->getBaseExpr());
+			klee_xqx_debug("TypeID: %d", ai->getType()->getTypeID());
+			klee_xqx_debug("rawTypeID: %d", ai->getRawType()->getTypeID());
+			executeMakeSymbolic(*state, mo, "argument of TargetFunction: pointer => \
+					alloc space and make it's content symbolic");
+			break;
+		case llvm::Type::StructTyID:
+			;
+		case llvm::Type::ArrayTyID:
+			;
+		case llvm::Type::VectorTyID:
+			;
+		default:
+			klee_warning("type: %d not considered.\n", tid);
+		}
+
+	}
+
+	
+	assert(arguments.size() == f->arg_size() && "wrong number of arguments");
+	for (unsigned i = 0, e = f->arg_size(); i != e; ++i)
+		bindArgument(kf, i, *state, arguments[i]);
+
+	initializeGlobals(*state);
+
+	processTree = new PTree(state);
+	state->ptreeNode = processTree->root;
+	run(*state);
+	delete processTree;
+	processTree = 0;
+
+	// hack to clear memory objects
+	delete memory;
+	memory = new MemoryManager();
+
+	globalObjects.clear();
+	globalAddresses.clear();
+
+	if (statsTracker)
+		statsTracker->done();
+
+
 }
 
 Interpreter *Interpreter::create(const InterpreterOptions &opts,

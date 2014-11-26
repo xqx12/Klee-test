@@ -219,6 +219,11 @@ namespace {
 		LibPathFile("lib-path",
 				cl::desc("Specify a path file of lib*.bca"),
 				cl::value_desc("path of the lib file"));
+
+	cl::opt<std::string>
+		FuncToRun("run-func",
+				cl::desc("Specify a function to run "),
+				cl::value_desc("the function to be run"));
 }
 
 extern cl::opt<double> MaxTime;
@@ -1356,6 +1361,7 @@ int main(int argc, char **argv, char **envp) {
         return -1;
     }
 
+
     // FIXME: Change me to std types.
     int pArgc;
     char **pArgv;
@@ -1524,6 +1530,19 @@ int main(int argc, char **argv, char **envp) {
                 klee_error("Unable to change directory to: %s", RunInDir.c_str());
             }
         }
+#ifdef RUN_CUSTOM_FUNC
+		if( FuncToRun != "main") {
+			Function *runFn = mainModule->getFunction(FuncToRun);
+			if(!runFn) {
+				std::cerr << "get function error: " << FuncToRun << "\n";
+				return -1
+			}
+
+			interpreter->xRunFunction(runFn, pArgc, pArgv, pEnvp);
+			return 1;
+		}
+
+#endif
         klee_message("[xqx] Klee using %d seeds : ", seeds.size());
         interpreter->runFunctionAsMain(mainFn, pArgc, pArgv, pEnvp);
 

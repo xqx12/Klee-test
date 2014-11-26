@@ -167,6 +167,7 @@ public:
                                std::map<const std::string*, std::set<unsigned> > &res) = 0;
 
   virtual void printStatsInfoWithSrcLine() = 0;
+  virtual void xRunFunction(llvm::Function *f) =0;
 };
 
 } // End klee namespace

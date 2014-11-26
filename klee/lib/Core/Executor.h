@@ -478,6 +478,8 @@ public:
   Expr::Width getWidthForLLVMType(LLVM_TYPE_Q llvm::Type *type) const;
 
   virtual void printStatsInfoWithSrcLine();
+
+  virtual void xRunFunction(Function *f) ;
 };
   
 } // End klee namespace
