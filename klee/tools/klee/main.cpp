@@ -223,7 +223,8 @@ namespace {
 	cl::opt<std::string>
 		FuncToRun("run-func",
 				cl::desc("Specify a function to run "),
-				cl::value_desc("the function to be run"));
+				cl::value_desc("the function to be run"),
+				cl::init("main"));
 }
 
 extern cl::opt<double> MaxTime;
@@ -1530,26 +1531,30 @@ int main(int argc, char **argv, char **envp) {
                 klee_error("Unable to change directory to: %s", RunInDir.c_str());
             }
         }
+#define RUN_CUSTOM_FUNC
 #ifdef RUN_CUSTOM_FUNC
+		std::cerr << "get function : " << FuncToRun << "\n";
 		if( FuncToRun != "main") {
 			Function *runFn = mainModule->getFunction(FuncToRun);
 			if(!runFn) {
 				std::cerr << "get function error: " << FuncToRun << "\n";
-				return -1
+				return -1;
 			}
 
-			interpreter->xRunFunction(runFn, pArgc, pArgv, pEnvp);
-			return 1;
+			interpreter->xRunFunction(runFn);
+			//return 1;
 		}
-
+		else
 #endif
-        klee_message("[xqx] Klee using %d seeds : ", seeds.size());
-        interpreter->runFunctionAsMain(mainFn, pArgc, pArgv, pEnvp);
+		{
+			klee_message("[xqx] Klee usinga %d seeds : ", seeds.size());
+			interpreter->runFunctionAsMain(mainFn, pArgc, pArgv, pEnvp);
 
-        while (!seeds.empty()) {
-            kTest_free(seeds.back());
-            seeds.pop_back();
-        }
+			while (!seeds.empty()) {
+				kTest_free(seeds.back());
+				seeds.pop_back();
+			}
+		}
     }
 
     t[1] = time(NULL);

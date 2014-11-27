@@ -4206,6 +4206,7 @@ void Executor::xRunFunction(Function *f)
 	KFunction *kf = kmodule->functionMap[f];
 	assert(kf);
 
+
 	ExecutionState *state = new ExecutionState(kmodule->functionMap[f]);
 	if (pathWriter) 
 		state->pathOS = pathWriter->open();
@@ -4214,8 +4215,10 @@ void Executor::xRunFunction(Function *f)
 	if (statsTracker)
 		statsTracker->framePushed(*state, 0);
 
+	klee_xqx_debug("func=%s, arg_size=%d", f->getNameStr().c_str(), f->arg_size());
 
 	Function::arg_iterator ai = f->arg_begin(), ae = f->arg_end();
+	const Array *array;
 	for( ; ai != ae ; ai++) {
 		const llvm::Type *type = ai->getType();
 		llvm::Type::TypeID tid = type->getTypeID();
@@ -4226,13 +4229,20 @@ void Executor::xRunFunction(Function *f)
 
 		MemoryObject *mo;
 		ObjectState *os;
+		ref<Expr> eee;
 		switch(tid) {
 		case llvm::Type::IntegerTyID:
 			//symbolic expr
-			mo = memory->allocate(8*8, false, true, f->begin()->begin());
-			os = bindObjectInState(*state, mo, false);
+			mo = memory->allocate(4*8, false, true, f->begin()->begin());
+			array = new Array(name, mo->size);
+			os = bindObjectInState(*state, mo, false, array);
+			executeMakeSymbolic(*state, mo, name);
+
 			if (type->isIntegerTy(32)) {
-				arguments.push_back(ConstantExpr::alloc(1, Expr::Int32));
+				if( os->getUpdatesArray() )
+					arguments.push_back(Expr::createTempRead(os->getUpdatesArray(),Expr::Int32));
+				else
+					arguments.push_back(ConstantExpr::alloc(0, Expr::Int32));
 			}
 			else if (type->isIntegerTy(64)) {
 				arguments.push_back(ConstantExpr::alloc(1, Expr::Int64));
@@ -4252,20 +4262,19 @@ void Executor::xRunFunction(Function *f)
 			break;
 		case llvm::Type::PointerTyID:
 			mo = memory->allocate(100, false, true, f->begin()->begin());
-			arguments.push_back(Expr::createPointer(mo->address));
+			eee = Expr::createPointer(mo->address);
+			eee->dump();
+			arguments.push_back(eee);
+			//arguments.push_back(Expr::createPointer(mo->address));
 			os = bindObjectInState(*state, mo, false);
 			os->write(1 * NumPtrBytes, mo->getBaseExpr());
 			klee_xqx_debug("TypeID: %d", ai->getType()->getTypeID());
 			klee_xqx_debug("rawTypeID: %d", ai->getRawType()->getTypeID());
-			executeMakeSymbolic(*state, mo, "argument of TargetFunction: pointer => \
-					alloc space and make it's content symbolic");
+			executeMakeSymbolic(*state, mo, name);
 			break;
 		case llvm::Type::StructTyID:
-			;
 		case llvm::Type::ArrayTyID:
-			;
 		case llvm::Type::VectorTyID:
-			;
 		default:
 			klee_warning("type: %d not considered.\n", tid);
 		}

@@ -629,3 +629,12 @@ void ObjectState::print() const {
 		std::cerr << "\t\t[" << un->index << "] = " << un->value << "\n";
 	}
 }
+
+
+const Array* ObjectState::getUpdatesArray()
+{
+	if (!updates.root) {
+		return NULL;
+	} 
+	return updates.root;
+}

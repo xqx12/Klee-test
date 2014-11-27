@@ -235,6 +235,7 @@ private:
 public: //add for test addbyxqx
   void print();
   void print() const;
+  const Array* getUpdatesArray() ;
 };
   
 } // End klee namespace

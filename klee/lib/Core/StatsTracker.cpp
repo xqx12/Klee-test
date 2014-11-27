@@ -604,7 +604,7 @@ static std::vector<Instruction*> getSuccs(Instruction *i) {
 
 uint64_t klee::computeMinDistToUncovered(const KInstruction *ki,
                                          uint64_t minDistAtRA) {
-	klee_xqx_debug("=====computeMinDistToUncovered=======");
+	//klee_xqx_debug("=====computeMinDistToUncovered=======");
   StatisticManager &sm = *theStatisticManager;
   if (minDistAtRA==0) { // unreachable on return, best is local
     return sm.getIndexedValue(stats::minDistToUncovered,
