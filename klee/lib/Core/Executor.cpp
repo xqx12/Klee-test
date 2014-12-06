@@ -4020,7 +4020,6 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 		klee_message("calledFunc cannot be got" );
 		return false;
 	}
-	klee_message("calledFunc: %s", fc->getName().data());
 
 	//we assume the alloc* functions are the memory allocation function.
 	//if( fc->getName().str().find("alloc") == std::string::npos ){
@@ -4036,14 +4035,12 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 	size->dump();
 	std::pair< ref<Expr>, ref<Expr> > range;
 	range = solver->solver->getRange(Query(state.constraints, size));
-	klee_message("[xqx]min size is:");
-	range.first->dump();
-	klee_message("[xqx]max size is:");
-	range.second->dump();
-	//insert range to the map
+	std::ostringstream rangeInfo;
+	std::string rangeStr;
+	rangeInfo << "[min, max] <-->  [" << range.first << ", " << range.second << "]\n" ;
+	rangeStr = rangeInfo.str();
+	klee_message(rangeStr.c_str());
 	state.stateRange = range;
-	//allocSizeRange->insert(std::make_pair(std::make_pair((unsigned int)(state.id),i),
-									//range));
 #endif
 #if 1
 	std::ostringstream xinfo;
@@ -4116,13 +4113,17 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 
 				if (hugeSize.second) {
 					ref<ConstantExpr> example;
-					bool success = solver->getValue(state, size, example);
+					bool success = solver->getValue(*hugeSize.second, size, example);
 					assert(success && "FIXME: Unhandled solver failure");
 					(void) success;
 
+					klee_message("getValue of example:");
+					example->dump();
 					// Try and start with a small example.
 					Expr::Width W = example->getWidth();
 					while (example->Ugt(ConstantExpr::alloc(128, W))->isTrue()) {
+						klee_xqx_debug("example = ");
+						example->dump();
 						ref<ConstantExpr> tmp = example->LShr(ConstantExpr::alloc(1, W));
 						bool res;
 						bool success = solver->mayBeTrue(state, EqExpr::create(tmp, size), res);
@@ -4144,10 +4145,16 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 						//state.dumpStack(info);
 #ifdef XQX_DEBUG_PRINT_RANGE
 						klee_message("[xqx] range of size in state[%d]-----------", fixedSize.second->id);
-						klee_message("[xqx]min size is:");
-						fixedSize.second->stateRange.first->dump();
-						klee_message("[xqx]max size is:");
-						fixedSize.second->stateRange.second->dump();
+						std::ostringstream rangeInfo;
+						std::string rangeStr;
+						rangeInfo << "[min, max] <-->  [" << fixedSize.second->stateRange.first << ", " << fixedSize.second->stateRange.second << "]\n" ;
+						rangeStr = rangeInfo.str();
+						klee_message(rangeStr.c_str());
+
+						//klee_message("[xqx]min size is:");
+						//fixedSize.second->stateRange.first->dump();
+						//klee_message("[xqx]max size is:");
+						//fixedSize.second->stateRange.second->dump();
 #endif
 
 						terminateStateOnError(*fixedSize.second, 
@@ -4158,9 +4165,17 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 					if (fixedSize.first) // can be zero when fork fails
 					{
 						std::ostringstream info;
-						info << "[xqx] concretizating a size " << example << " in state[" << fixedSize.second->id << "]\n"  ;
+						info << "[xqx] concretizating a size " << example << " and addConstraint in state[" << fixedSize.first->id << "]\n"  ;
 						std::string msg = info.str();
 						klee_message(msg.c_str());
+						//here, it needs to add the contraint to state, or not?  addbyxqx201412
+						//
+						//addConstraint(*fixedSize.first, EqExpr::create(size, example));
+						//fixedSize.first->addConstraint(EqExpr::create(size, example));
+						size = ConstantExpr::alloc(3,W);
+						klee_message("size;:");
+						size->dump();
+
 						executeAlloc(*fixedSize.first, example, isLocal, 
 								target, zeroMemory, reallocFrom);
 					}

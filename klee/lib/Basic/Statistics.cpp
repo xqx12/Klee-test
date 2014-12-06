@@ -15,7 +15,7 @@
 using namespace klee;
 using namespace std;
 
-#undef XQX_DEBUG
+//#undef XQX_DEBUG
 
 StatisticManager::StatisticManager()
   : enabled(true),
@@ -31,7 +31,7 @@ StatisticManager::~StatisticManager() {
 }
 
 void StatisticManager::useIndexedStats(unsigned totalIndices) {  
-#ifdef XQX_DEBUG
+#ifdef XQX_DEBUG_STATISTIC
 		printf("useIndexedStats: stats size= %d, totalIndices=%d\n" , stats.size(), totalIndices);
 #endif
   if (indexedStats) delete[] indexedStats;
@@ -40,7 +40,7 @@ void StatisticManager::useIndexedStats(unsigned totalIndices) {
 }
 
 void StatisticManager::registerStatistic(Statistic &s) {
-#ifdef XQX_DEBUG
+#ifdef XQX_DEBUG_STATISTIC
 		printf("in regitster statistic : stats size= %d\n" , stats.size());
 #endif
   if (globalStats) delete[] globalStats;
@@ -78,7 +78,7 @@ Statistic::Statistic(const std::string &_name,
                      const std::string &_shortName) 
   : name(_name), 
     shortName(_shortName) {
-#ifdef XQX_DEBUG
+#ifdef XQX_DEBUG_STATISTIC
 		//std::cout << "regitster statistic :	" << name << "\n";
 		printf("regitster statistic : %s\n" , _name.c_str());
 #endif

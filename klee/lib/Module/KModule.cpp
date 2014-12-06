@@ -55,12 +55,14 @@
 
 #include <sstream>
 
+#define XQX_DEBUG_PATCH_CRCERROR 
+
+
 using namespace llvm;
 using namespace klee;
 
 extern llvm::Pass *createCallPathsPass();
 
-#undef XQX_DEBUG
 
 
 namespace {
@@ -524,6 +526,48 @@ void KModule::prepare(const Interpreter::ModuleOptions &opts,
     }
     llvm::errs() << "]\n";
   }
+  
+#ifdef XQX_DEBUG_PATCH_CRCERROR
+  //addbyxqx
+  if (OutputSource) {
+    std::ostream *os = ih->openOutputFile("patched.ll");
+    assert(os && os->good() && "unable to open source output");
+
+    llvm::raw_os_ostream *ros = new llvm::raw_os_ostream(*os);
+
+    // We have an option for this in case the user wants a .ll they
+    // can compile.
+    if (NoTruncateSourceLines) {
+      *ros << *module;
+    } else {
+      std::string string;
+      llvm::raw_string_ostream rss(string);
+      rss << *module;
+      rss.flush();
+      const char *position = string.c_str();
+
+      for (;;) {
+        const char *end = index(position, '\n');
+        if (!end) {
+          *ros << position;
+          break;
+        } else {
+          unsigned count = (end - position) + 1;
+          if (count<255) {
+            ros->write(position, count);
+          } else {
+            ros->write(position, 254);
+            *ros << "\n";
+          }
+          position = end+1;
+        }
+      }
+    }
+    delete ros;
+
+    delete os;
+  }
+#endif
 }
 
 KConstant* KModule::getKConstant(Constant *c) {
@@ -542,7 +586,7 @@ unsigned KModule::getConstantID(Constant *c, KInstruction* ki) {
   kc = new KConstant(c, id, ki);
   constantMap.insert(std::make_pair(c, kc));
   constants.push_back(c);
-#ifdef XQX_DEBUG
+#ifdef XQX_DEBUG_KMOUDLE
   klee_xqx_debug("insert constant+++++++++++id=%d",id);
   c->dump();
 #endif
@@ -604,6 +648,19 @@ KFunction::KFunction(llvm::Function *_function,
   }
   numRegisters = rnum;
   
+#ifdef XQX_DEBUG_PATCH_CRCERROR
+  bool in_crcerror = false;
+  bool in_png_calc_crc = false;
+  if( function->getNameStr() == "png_crc_error" ) {
+	  klee_xqx_debug("kfunction----%s", function->getName());
+	  in_crcerror = true;
+  }
+  if( function->getNameStr() == "png_calculate_crc" ) {
+	  klee_xqx_debug("kfunction----%s", function->getName());
+	  in_png_calc_crc = true;
+  }
+#endif
+
   unsigned i = 0;
   for (llvm::Function::iterator bbit = function->begin(), 
          bbie = function->end(); bbit != bbie; ++bbit) {
@@ -622,15 +679,51 @@ KFunction::KFunction(llvm::Function *_function,
 
       ki->inst = it;      
       ki->dest = registerMap[it];
-#ifdef XQX_DEBUG
-	  it->dump();
+#ifdef XQX_DEBUG_PATCH_CRCERROR
+	  if( in_crcerror ) {
+		  if( PHINode *phi = dyn_cast<PHINode>(it) ){
+			  it->dump();
+			  //unsigned numOperands = it->getNumOperands();
+			  //for (unsigned j=0; j<numOperands; j++) {
+				  //Value *v = it->getOperand(j);
+				  //v->dump();
+			  //}
+			  it->setOperand(0,it->getOperand(2));
+			  it->dump();
+		  }
+		  // if add "-g" 
+		  if( StoreInst *SI = dyn_cast<StoreInst>(it) ) {
+			  //klee_message("store in %s by ", SI->getOperand(1)->getName().str().c_str());
+			  if( SI->getOperand(1)->getName().str() == "need_crc") {
+				  if( ConstantInt *CI = dyn_cast<ConstantInt>(SI->getOperand(0)) ) {
+					  if( CI->isOne() ) 
+						  SI->setOperand(0,llvm::ConstantInt::get(SI->getOperand(0)->getType(), 0) );
+				  }
+			  }
+		  }
+
+	  }
+	  if( in_png_calc_crc ) {
+		  if( BranchInst *BrI = dyn_cast<BranchInst>(it) ) {
+			  //klee_message("br: succ0:%s", BrI->getSuccessor(0)->getName().str().c_str());
+			  //klee_message("br: succ1:%s", BrI->getSuccessor(1)->getName().str().c_str());
+			  if ( BrI->getParent()->getNameStr() == "bb" ) {
+				  BrI->setCondition(llvm::ConstantInt::get(BrI->getCondition()->getType(),1) );
+
+			  }
+			  //1.4.2 :0   1.7.0 :1
+			  if ( BrI->getParent()->getNameStr() == "bb2" ) 
+				  BrI->setCondition(llvm::ConstantInt::get(BrI->getCondition()->getType(),1) );
+		  }
+	  }
 #endif
+
 
       if (isa<CallInst>(it) || isa<InvokeInst>(it)) {
         CallSite cs(it);
         unsigned numArgs = cs.arg_size();
         ki->operands = new int[numArgs+1];
-#ifdef XQX_DEBUG
+#ifdef XQX_DEBUG_KMOUDLE
 		klee_xqx_debug("kfunction----%s",cs.getCalledValue()->getName());
 		klee_xqx_debug("kfunction---cs dump-");
 #endif
@@ -640,7 +733,8 @@ KFunction::KFunction(llvm::Function *_function,
           Value *v = cs.getArgument(j);
           ki->operands[j+1] = getOperandNum(v, registerMap, km, ki);
         }
-      } else {
+      } 
+	  else {
         unsigned numOperands = it->getNumOperands();
         ki->operands = new int[numOperands];
         for (unsigned j=0; j<numOperands; j++) {

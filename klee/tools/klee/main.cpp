@@ -354,8 +354,11 @@ KleeHandler::KleeHandler(int argc, char **argv)
             m_outputDirectory = cwd;
         }
 
-        if (mkdir(m_outputDirectory.c_str(), 0775) < 0)
-            klee_error("cannot create directory \"%s\": %s", m_outputDirectory.c_str(), strerror(errno));
+		bool isDir = true;
+		llvm::error_code e = llvm::sys::fs::exists(m_outputDirectory.str(), isDir);
+		if ( !isDir )
+			if (mkdir(m_outputDirectory.c_str(), 0775) < 0)
+				klee_error("cannot create directory \"%s\": %s", m_outputDirectory.c_str(), strerror(errno));
 
         std::string file_path = getOutputFilename("warnings.txt");
         if ((klee_warning_file = fopen(file_path.c_str(), "w")) == NULL)

@@ -60,7 +60,7 @@
 using namespace klee;
 using namespace llvm;
 
-#undef XQX_DEBUG
+//#undef XQX_DEBUG
 ///
 
 namespace {  
@@ -677,18 +677,18 @@ void StatsTracker::computeReachableUncovered() {
          fnIt != fn_ie; ++fnIt) {
       if (fnIt->isDeclaration()) {
         if (fnIt->doesNotReturn()) {
-#ifdef XQX_DEBUG
+#ifdef XQX_DEBUG_STATSTRACKER
 	  klee_xqx_debug("not Return function=%s, ", fnIt->getNameStr().c_str());
 #endif
           functionShortestPath[fnIt] = 0;
         } else {
-#ifdef XQX_DEBUG
+#ifdef XQX_DEBUG_STATSTRACKER
 	  klee_xqx_debug("Return function=%s, ", fnIt->getNameStr().c_str());
 #endif
           functionShortestPath[fnIt] = 1; // whatever
         }
       } else {
-#ifdef XQX_DEBUG
+#ifdef XQX_DEBUG_STATSTRACKER
 	  klee_xqx_debug("not declare function=%s, ", fnIt->getNameStr().c_str());
 #endif
         functionShortestPath[fnIt] = 0;
@@ -774,7 +774,7 @@ void StatsTracker::computeReachableUncovered() {
   }
 
   //init end
-#ifdef XQX_DEBUG
+#ifdef XQX_DEBUG_STATSTRACKER
   //print the functionshortestpath and instructions minDistToReturn
   std::map<Function*, unsigned>::iterator fsit, fset=functionShortestPath.end(); 
   for(fsit=functionShortestPath.begin();fsit!=fset;fsit++)
@@ -884,7 +884,7 @@ void StatsTracker::computeReachableUncovered() {
     }
   } while (changed);
 
-#ifdef XQX_DEBUG
+#ifdef XQX_DEBUG_STATSTRACKER
   klee_xqx_debug("=====================minDistToUncovered=================");
   for (Module::iterator fnIt = m->begin(), fn_ie = m->end(); 
 		  fnIt != fn_ie; ++fnIt) {
@@ -942,7 +942,7 @@ void StatsTracker::printStatsInfo(const Statistic &s) {
 	const InstructionInfoTable &infos = *km->infos;
 	StatisticManager &sm = *theStatisticManager;
 
-#ifdef XQX_DEBUG
+#ifdef XQX_DEBUG_STATSTRACKER
 	klee_xqx_debug("=====================forks in each inst=================");
 	for (Module::iterator fnIt = m->begin(), fn_ie = m->end(); 
 			fnIt != fn_ie; ++fnIt) {

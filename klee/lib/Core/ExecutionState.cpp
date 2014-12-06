@@ -148,7 +148,7 @@ ExecutionState *ExecutionState::branch(uint64_t sid) {
 
   falseState->id = sid;
 #ifdef XQX_INFO
-	klee_xqx_debug("branch new state [%d]." , sid);
+	klee_xqx_info("branch new state [%d]." , sid);
 #endif
 
   return falseState;
