@@ -25,6 +25,7 @@
 //#define XQX_DEBUG_FORK_DUMP_STACK
 #define XQX_DEBUG_PRINT_RANGE
 #define XQX_CMA_CHECK
+#define XQX_CONCRETE_EXEC
 
 #include <stdio.h>
 

@@ -277,6 +277,10 @@ namespace {
 				cl::desc("print debug info (inst) when debug-insts-num insts be executed"),
 				cl::init(0));
 
+	cl::opt<bool>
+		UseConcreteData("use-concrete-data",
+				cl::init(false),
+				cl::desc("use concrete data when getValue"));
 }
 
 
@@ -352,7 +356,12 @@ Executor::Executor(const InterpreterOptions &opts,
 					interpreterHandler->getOutputFilename(ALL_QUERIES_PC_FILE_NAME),
 					interpreterHandler->getOutputFilename(SOLVER_QUERIES_PC_FILE_NAME));
 
-		this->solver = new TimingSolver(solver);
+		if( !UseConcreteData ) {
+			this->solver = new TimingSolver(solver);
+		}
+		else {
+			this->solver = new TimingSolver(solver, true, &seedMap);
+		}
 
 		memory = new MemoryManager();
 	}
@@ -2838,6 +2847,14 @@ void Executor::run(ExecutionState &initialState) {
 			goto dump;
 	}
 
+	if(UseConcreteData && !usingSeeds ) {
+#ifdef XQX_CONCRETE_EXEC
+		klee_xqx_debug("set seedMap");
+#endif
+		std::vector<SeedInfo> &v = seedMap[&initialState];
+		v.push_back(SeedInfo(NULL));
+	}
+
 	klee_xqx_debug("start symbolic execution now-------");
 
 	searcher = constructUserSearcher(*this);
@@ -3671,11 +3688,58 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 	}
 }
 
+//addbyxqx201412 from zesti
+std::vector<unsigned char>
+Executor::readObjectAtAddress(ExecutionState &state, ref<Expr> addressExpr) {
+	ObjectPair op;
+	addressExpr = toUnique(state, addressExpr);
+	ref<ConstantExpr> address = cast<ConstantExpr>(addressExpr);
+	if (!state.addressSpace.resolveOne(address, op))
+		assert(0 && "XXX out of bounds / multiple resolution unhandled");
+	bool res;
+	assert(solver->mustBeTrue(state, EqExpr::create(address, 
+					op.first->getBaseExpr()), res) &&
+			res &&
+			"XXX interior pointer unhandled");
+	const MemoryObject *mo = op.first;
+	const ObjectState *os = op.second;
+
+	unsigned char buf;
+	std::vector<unsigned char> result;
+	unsigned i;
+#ifdef XQX_CONCRETE_EXEC
+	klee_xqx_debug("read size=%d at address:,", mo->size);
+	addressExpr->dump();
+#endif
+	for (i = 0; i < mo->size; i++) {
+		ref<Expr> cur = os->read8(i);
+		cur = toUnique(state, cur);
+		assert(isa<ConstantExpr>(cur) && 
+				"hit symbolic byte while reading concrete object");
+		buf = cast<ConstantExpr>(cur)->getZExtValue(8);
+#ifdef XQX_CONCRETE_EXEC
+		klee_xqx_debug("%x ",buf);
+#endif
+		result.push_back(buf);
+	}
+
+	return result;
+}
+
 void Executor::executeMakeSymbolic(ExecutionState &state, 
 		const MemoryObject *mo,
 		const std::string &name) {
 	// Create a new object state for the memory object (instead of a copy).
 	if (!replayOut) {
+
+		std::vector<unsigned char> prevVal;
+		if (UseConcreteData) {
+			prevVal = readObjectAtAddress(state,
+					ConstantExpr::create(mo->address,
+						Context::get().getPointerWidth()));
+		}
+		
+
 		// Find a unique name for this array.  First try the original name,
 		// or if that fails try adding a unique identifier.
 		unsigned id = 0;
@@ -3694,40 +3758,50 @@ void Executor::executeMakeSymbolic(ExecutionState &state,
 			for (std::vector<SeedInfo>::iterator siit = it->second.begin(), 
 					siie = it->second.end(); siit != siie; ++siit) {
 				SeedInfo &si = *siit;
-				KTestObject *obj = si.getNextInput(mo, NamedSeedMatching);
 
-				if (!obj) {
-					if (ZeroSeedExtension) {
-						std::vector<unsigned char> &values = si.assignment.bindings[array];
-						values = std::vector<unsigned char>(mo->size, '\0');
-					} else if (!AllowSeedExtension) {
-						terminateStateOnError(state, 
-								"ran out of inputs during seeding",
-								"user.err");
-						break;
-					}
-				} else {
-					if (obj->numBytes != mo->size &&
-							((!(AllowSeedExtension || ZeroSeedExtension)
-							  && obj->numBytes < mo->size) ||
-							 (!AllowSeedTruncation && obj->numBytes > mo->size))) {
-						std::stringstream msg;
-						msg << "replace size mismatch: "
-							<< mo->name << "[" << mo->size << "]"
-							<< " vs " << obj->name << "[" << obj->numBytes << "]"
-							<< " in test\n";
+				if ( UseConcreteData ) {
+#ifdef XQX_CONCRETE_EXEC
+					klee_xqx_debug("set assignment of %s", uniqueName.c_str());
+#endif
+					si.assignment.bindings[array] = prevVal;
+				}
+				else {
+					KTestObject *obj = si.getNextInput(mo, NamedSeedMatching);
 
-						terminateStateOnError(state,
-								msg.str(),
-								"user.err");
-						break;
-					} else {
-						std::vector<unsigned char> &values = si.assignment.bindings[array];
-						values.insert(values.begin(), obj->bytes, 
-								obj->bytes + std::min(obj->numBytes, mo->size));
+					if (!obj) {
 						if (ZeroSeedExtension) {
-							for (unsigned i=obj->numBytes; i<mo->size; ++i)
-								values.push_back('\0');
+							std::vector<unsigned char> &values = si.assignment.bindings[array];
+							values = std::vector<unsigned char>(mo->size, '\0');
+						} else if (!AllowSeedExtension) {
+							terminateStateOnError(state, 
+									"ran out of inputs during seeding",
+									"user.err");
+							break;
+						}
+					} 
+					else {
+						if (obj->numBytes != mo->size &&
+								((!(AllowSeedExtension || ZeroSeedExtension)
+								  && obj->numBytes < mo->size) ||
+								 (!AllowSeedTruncation && obj->numBytes > mo->size))) {
+							std::stringstream msg;
+							msg << "replace size mismatch: "
+								<< mo->name << "[" << mo->size << "]"
+								<< " vs " << obj->name << "[" << obj->numBytes << "]"
+								<< " in test\n";
+
+							terminateStateOnError(state,
+									msg.str(),
+									"user.err");
+							break;
+						} else {
+							std::vector<unsigned char> &values = si.assignment.bindings[array];
+							values.insert(values.begin(), obj->bytes, 
+									obj->bytes + std::min(obj->numBytes, mo->size));
+							if (ZeroSeedExtension) {
+								for (unsigned i=obj->numBytes; i<mo->size; ++i)
+									values.push_back('\0');
+							}
 						}
 					}
 				}
@@ -4113,7 +4187,7 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 
 				if (hugeSize.second) {
 					ref<ConstantExpr> example;
-					bool success = solver->getValue(*hugeSize.second, size, example);
+					bool success = solver->getValue(*hugeSize.second, size, example, true);
 					assert(success && "FIXME: Unhandled solver failure");
 					(void) success;
 
@@ -4172,9 +4246,6 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 						//
 						//addConstraint(*fixedSize.first, EqExpr::create(size, example));
 						//fixedSize.first->addConstraint(EqExpr::create(size, example));
-						size = ConstantExpr::alloc(3,W);
-						klee_message("size;:");
-						size->dump();
 
 						executeAlloc(*fixedSize.first, example, isLocal, 
 								target, zeroMemory, reallocFrom);

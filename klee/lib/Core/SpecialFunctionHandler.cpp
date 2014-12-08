@@ -440,7 +440,7 @@ void SpecialFunctionHandler::handleAssume(ExecutionState &state,
   assert(arguments.size()==1 && "invalid number of arguments to klee_assume");
   
   ref<Expr> e = arguments[0];
-#ifdef XQX_DEBUG
+#if 0
 	  klee_xqx_debug("klee_assume: add expr ======");
 	  e->dump();
 #endif

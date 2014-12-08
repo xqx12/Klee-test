@@ -480,6 +480,9 @@ public:
   virtual void printStatsInfoWithSrcLine();
 
   virtual void xRunFunction(Function *f) ;
+
+  // for concrete data byxqx
+  std::vector<unsigned char> readObjectAtAddress(ExecutionState &state, ref<Expr> addressExpr);
 };
   
 } // End klee namespace

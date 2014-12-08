@@ -395,6 +395,7 @@ void __xqx_make_file_symbolic(exe_disk_file_t* dfile, char* orig_content, const 
 				}
 				memcpy( dfile->contents, orig_content, dfile->size);
 				char *symbuf = malloc(p->sym_buf[i].length);
+				memcpy(symbuf, orig_content+p->sym_buf[i].offset, p->sym_buf[i].length); 
 				klee_make_symbolic(symbuf, p->sym_buf[i].length, dfile->path);
 				memcpy(dfile->contents+p->sym_buf[i].offset, symbuf, p->sym_buf[i].length);
 #ifdef XQX_DEBUG_PNG
