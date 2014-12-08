@@ -281,6 +281,11 @@ namespace {
 		UseConcreteData("use-concrete-data",
 				cl::init(false),
 				cl::desc("use concrete data when getValue"));
+
+	cl::opt<bool>
+		DumpFuncTrace("dump-func-trace",
+				cl::init(false),
+				cl::desc("trace functions of states"));
 }
 
 
@@ -1306,6 +1311,7 @@ void Executor::executeCall(ExecutionState &state,
 	//if( ki->info->file.find("uclibc") == std::string::npos 
 			////&& ki->info->file.find("POSIX")== std::string::npos
 			//) 
+	if( DumpFuncTrace )
 	{
 
 		std::string filename;
