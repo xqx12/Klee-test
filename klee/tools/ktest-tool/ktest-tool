@@ -104,8 +104,10 @@ def main(args):
             if opts.writeInts and len(data) == 4: 
                 print('object %4d: data: %r' % (i, struct.unpack('i',str)[0]))
             else:
-                #print('object %4d: data: %r' % (i, struct.unpack('i',str)[0]))
-                print('object %4d: data: %r' % (i, str))
+                #print('object %4d: data: %r' % (i, str))
+                print('object %d: data:' %(i) )
+                for i in range(len(data))[::-1]:
+					print('%x' % str[i])
         if file != args[-1]:
             print()
 
