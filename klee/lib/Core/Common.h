@@ -16,7 +16,7 @@
 #endif
 #endif
 
-//#define XQX_DEBUG
+#define XQX_DEBUG
 //#define XQX_DEBUG_1
 #define XQX_INFO
 //#define XQX_DEBUG_ENV
@@ -26,6 +26,7 @@
 #define XQX_DEBUG_PRINT_RANGE
 #define XQX_CMA_CHECK
 #define XQX_CONCRETE_EXEC
+#define XQX_RESOLVE_ADDR
 
 #include <stdio.h>
 

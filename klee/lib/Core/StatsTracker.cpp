@@ -502,71 +502,71 @@ void StatsTracker::writeIStats() {
   of << "ob=" << objectFilename << "\n";
 
   for (Module::iterator fnIt = m->begin(), fn_ie = m->end(); 
-       fnIt != fn_ie; ++fnIt) {
-    if (!fnIt->isDeclaration()) {
-      of << "fn=" << fnIt->getName().str() << "\n";
-      for (Function::iterator bbIt = fnIt->begin(), bb_ie = fnIt->end(); 
-           bbIt != bb_ie; ++bbIt) {
-        for (BasicBlock::iterator it = bbIt->begin(), ie = bbIt->end(); 
-             it != ie; ++it) {
-          Instruction *instr = &*it;
-          const InstructionInfo &ii = executor.kmodule->infos->getInfo(instr);
-          unsigned index = ii.id;
-          if (ii.file!=sourceFile) {
-            of << "fl=" << ii.file << "\n";
-            sourceFile = ii.file;
-          }
-          of << ii.assemblyLine << " ";
-          of << ii.line << " ";
-          for (unsigned i=0; i<nStats; i++)
-            if (istatsMask&(1<<i))
-              of << sm.getIndexedValue(sm.getStatistic(i), index) << " ";
-          of << "\n";
+		  fnIt != fn_ie; ++fnIt) {
+	  if (!fnIt->isDeclaration()) {
+		  of << "fn=" << fnIt->getName().str() << "\n";
+		  for (Function::iterator bbIt = fnIt->begin(), bb_ie = fnIt->end(); 
+				  bbIt != bb_ie; ++bbIt) {
+			  for (BasicBlock::iterator it = bbIt->begin(), ie = bbIt->end(); 
+					  it != ie; ++it) {
+				  Instruction *instr = &*it;
+				  const InstructionInfo &ii = executor.kmodule->infos->getInfo(instr);
+				  unsigned index = ii.id;
+				  if (ii.file!=sourceFile) {
+					  of << "fl=" << ii.file << "\n";
+					  sourceFile = ii.file;
+				  }
+				  of << ii.assemblyLine << " ";
+				  of << ii.line << " ";
+				  for (unsigned i=0; i<nStats; i++)
+					  if (istatsMask&(1<<i))
+						  of << sm.getIndexedValue(sm.getStatistic(i), index) << " ";
+				  of << "\n";
 
-          if (UseCallPaths && 
-              (isa<CallInst>(instr) || isa<InvokeInst>(instr))) {
-            CallSiteSummaryTable::iterator it = callSiteStats.find(instr);
-            if (it!=callSiteStats.end()) {
-              for (std::map<llvm::Function*, CallSiteInfo>::iterator
-                     fit = it->second.begin(), fie = it->second.end(); 
-                   fit != fie; ++fit) {
-                Function *f = fit->first;
-                CallSiteInfo &csi = fit->second;
-                const InstructionInfo &fii = 
-                  executor.kmodule->infos->getFunctionInfo(f);
-  
-                if (fii.file!="" && fii.file!=sourceFile)
-                  of << "cfl=" << fii.file << "\n";
-                of << "cfn=" << f->getName().str() << "\n";
-                of << "calls=" << csi.count << " ";
-                of << fii.assemblyLine << " ";
-                of << fii.line << "\n";
+				  if (UseCallPaths && 
+						  (isa<CallInst>(instr) || isa<InvokeInst>(instr))) {
+					  CallSiteSummaryTable::iterator it = callSiteStats.find(instr);
+					  if (it!=callSiteStats.end()) {
+						  for (std::map<llvm::Function*, CallSiteInfo>::iterator
+								  fit = it->second.begin(), fie = it->second.end(); 
+								  fit != fie; ++fit) {
+							  Function *f = fit->first;
+							  CallSiteInfo &csi = fit->second;
+							  const InstructionInfo &fii = 
+								  executor.kmodule->infos->getFunctionInfo(f);
 
-                of << ii.assemblyLine << " ";
-                of << ii.line << " ";
-                for (unsigned i=0; i<nStats; i++) {
-                  if (istatsMask&(1<<i)) {
-                    Statistic &s = sm.getStatistic(i);
-                    uint64_t value;
+							  if (fii.file!="" && fii.file!=sourceFile)
+								  of << "cfl=" << fii.file << "\n";
+							  of << "cfn=" << f->getName().str() << "\n";
+							  of << "calls=" << csi.count << " ";
+							  of << fii.assemblyLine << " ";
+							  of << fii.line << "\n";
 
-                    // Hack, ignore things that don't make sense on
-                    // call paths.
-                    if (&s == &stats::uncoveredInstructions) {
-                      value = 0;
-                    } else {
-                      value = csi.statistics.getValue(s);
-                    }
+							  of << ii.assemblyLine << " ";
+							  of << ii.line << " ";
+							  for (unsigned i=0; i<nStats; i++) {
+								  if (istatsMask&(1<<i)) {
+									  Statistic &s = sm.getStatistic(i);
+									  uint64_t value;
 
-                    of << value << " ";
-                  }
-                }
-                of << "\n";
-              }
-            }
-          }
-        }
-      }
-    }
+									  // Hack, ignore things that don't make sense on
+									  // call paths.
+									  if (&s == &stats::uncoveredInstructions) {
+										  value = 0;
+									  } else {
+										  value = csi.statistics.getValue(s);
+									  }
+
+									  of << value << " ";
+								  }
+							  }
+							  of << "\n";
+						  }
+					  }
+				  }
+			  }
+		  }
+	  }
   }
 
   if (istatsMask & (1<<stats::states.getID()))

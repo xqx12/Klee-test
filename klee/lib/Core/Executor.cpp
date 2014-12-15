@@ -968,7 +968,7 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 #ifdef XQX_DEBUG
 		  klee_xqx_debug("seed branch %d-------------------",++index);
 		SeedInfo *si = &*siit;
-		si->printSeedInfo();
+		//si->printSeedInfo();
 		  klee_xqx_debug("condition is:-------------------");
 		  condition->dump();
 		  klee_xqx_debug("condition after evaluate:-------------------");
@@ -1337,7 +1337,10 @@ void Executor::executeCall(ExecutionState &state,
 #ifdef XQX_DUMP_ARGS
 		std::ostringstream argsinfo;
 		for (unsigned j=0; j<arguments.size(); ++j)
-			argsinfo << "args[" << j << "]: " << arguments[j] << "\n";
+		{
+			ref<Expr> expr = state.constraints.simplifyExpr(arguments[j]);
+			argsinfo << "args[" << j << "]: " << expr << "\n";
+		}
 
 		klee_record_func("%s", argsinfo.str().c_str());
 #endif
@@ -2246,6 +2249,18 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 			{
 				KGEPInstruction *kgepi = static_cast<KGEPInstruction*>(ki);
 				ref<Expr> base = eval(ki, 0, state).value;
+#ifdef XQX_RESOLVE_ADDR
+				bool bZero;
+				bool success = solver->mustBeTrue(state, Expr::createIsZero(base), bZero);
+				if( success && bZero ){
+					//terminateStateOnError(state,
+							//"memory error: read from 0",
+							//"ptr.err",
+							//"please check memory malloc before, may alloc failed");
+					klee_xqx_debug("base is zero");
+					printFileLine( state, ki);
+				}
+#endif
 
 				for (std::vector< std::pair<unsigned, uint64_t> >::iterator 
 						it = kgepi->indices.begin(), ie = kgepi->indices.end(); 
