@@ -766,11 +766,15 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 	std::map< ExecutionState*, std::vector<SeedInfo> >::iterator it = 
 		seedMap.find(&current);
 	bool isSeeding = it != seedMap.end();
-#if 0
+#if 1
 #ifdef XQX_DEBUG
+	ref<Expr> simpCond = current.constraints.simplifyExpr(condition);
+	if( ConstantExpr *CE = dyn_cast<ConstantExpr>(simpCond) ) ;
+	else {
 		klee_xqx_debug("fork0");
 		if(isSeeding==true) klee_xqx_debug("isSeeding ");
 		condition->dump();
+	}
 #endif
 #endif
 
@@ -1275,7 +1279,7 @@ void Executor::stepInstruction(ExecutionState &state) {
 		klee_xqx_debug("----------%d states left------------", states.size());
 		printFileLine(state, state.pc);
 		std::cerr << std::setw(10) << stats::instructions << " ";
-		llvm::errs() << *(state.pc->inst) << "in state[" << state.id << "]" << '\n';
+		llvm::errs() << *(state.pc->inst) << " in state[" << state.id << "]" << '\n';
 	}
 #endif	
 
@@ -1290,10 +1294,11 @@ void Executor::stepInstruction(ExecutionState &state) {
 	if (stats::instructions==StopAfterNInstructions)
 		haltExecution = true;
 
-
+#if 0
     if ((stats::instructions % 10000) == 0) {
 		klee_xqx_debug("10000 instructions executed");
 	}
+#endif
 }
 
 void Executor::executeCall(ExecutionState &state, 
@@ -1323,8 +1328,8 @@ void Executor::executeCall(ExecutionState &state,
 			info << "|\t";
 		}
 		info << state.stack.size() << "|\t";
-		klee_record_func("%s-%s -- %s:%d  s[%d]", info.str().c_str(), f->getName().str().c_str(), 
-				filename.c_str(), ki->info->line, state.id);
+		klee_record_func("%s-%s -- %s:%d:%d  s[%d]", info.str().c_str(), f->getName().str().c_str(), 
+				filename.c_str(), ki->info->line, ki->info->assemblyLine, state.id);
 #if 0
 		if( f->getName().str() == "open" && first) {
 			klee_xqx_debug("%s-%s -- %s:%d", info.str().c_str(), f->getName().str().c_str(), 

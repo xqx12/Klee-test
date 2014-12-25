@@ -225,6 +225,11 @@ namespace {
 				cl::desc("Specify a function to run "),
 				cl::value_desc("the function to be run"),
 				cl::init("main"));
+
+	cl::opt<bool>
+		UseLibelf("libelf", 
+				cl::desc("Link with libelf.bca"),
+				cl::init(false));
 }
 
 extern cl::opt<double> MaxTime;
@@ -1112,7 +1117,7 @@ static llvm::Module *linkWithUclibc(llvm::Module *mainModule, llvm::sys::Path li
 
     f = mainModule->getFunction("__ctype_get_mb_cur_max");
     if (f) f->setName("_stdlib_mb_cur_max");
-
+#if 0
     // Strip of asm prefixes for 64 bit versions because they are not
     // present in uclibc and we want to make sure stuff will get
     // linked. In the off chance that both prefixed and unprefixed
@@ -1122,11 +1127,13 @@ static llvm::Module *linkWithUclibc(llvm::Module *mainModule, llvm::sys::Path li
             fi != fe; ++fi) {
         Function *f = fi;
         const std::string &name = f->getName();
+				klee_xqx_debug(" func %s ", name.c_str());
         if (name[0]=='\01') {
             unsigned size = name.size();
             if (name[size-2]=='6' && name[size-1]=='4') {
                 std::string unprefixed = name.substr(1);
 
+				klee_xqx_debug("strip func %s ", unprefixed.c_str());
                 // See if the unprefixed version exists.
                 if (Function *f2 = mainModule->getFunction(unprefixed)) {
                     f->replaceAllUsesWith(f2);
@@ -1137,7 +1144,7 @@ static llvm::Module *linkWithUclibc(llvm::Module *mainModule, llvm::sys::Path li
             }
         }
     }
-
+#endif
     mainModule = klee::linkWithLibrary(mainModule, uclibcBCA.c_str());
     assert(mainModule && "unable to link with uclibc");
 
@@ -1191,10 +1198,63 @@ static llvm::Module *linkWithUclibc(llvm::Module *mainModule, llvm::sys::Path li
 
     new UnreachableInst(getGlobalContext(), bb);
 
+    
+
     klee_message("NOTE: Using klee-uclibc : %s", uclibcBCA.c_str());
     return mainModule;
 }
 #endif
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  stripfunc64
+ *  Description:  strip some func with \01
+ *  Copyright: addbyxqx 2014年12月24日 12时19分55秒
+ * =====================================================================================
+ */
+void StripFunc64(llvm::Module *mainModule)
+{
+
+    // Strip of asm prefixes for 64 bit versions because they are not
+    // present in uclibc and we want to make sure stuff will get
+    // linked. In the off chance that both prefixed and unprefixed
+    // versions are present in the module, make sure we don't create a
+    // naming conflict.
+    for (Module::iterator fi = mainModule->begin(), fe = mainModule->end();
+            fi != fe;) {
+        Function *f = fi;
+		++fi;
+        const std::string &name = f->getName();
+				klee_xqx_debug(" func %s ", name.c_str());
+        if (name[0]=='\01' && name.find("open64") == std::string::npos &&
+				name.find("__xstat64") == std::string::npos) {
+            unsigned size = name.size();
+            if (name[size-2]=='6' && name[size-1]=='4') {
+                std::string unprefixed = name.substr(1);
+
+				klee_xqx_debug("strip func %s ", unprefixed.c_str());
+                // See if the unprefixed version exists.
+                if (Function *f2 = mainModule->getFunction(unprefixed)) {
+					klee_xqx_debug("replace func %s ", unprefixed.c_str());
+					if(f2->isDeclaration()) {
+						klee_xqx_debug("isDeclaration func %s ", unprefixed.c_str());
+						f2->replaceAllUsesWith(f);
+						f2->eraseFromParent();
+						f->setName(unprefixed);
+					}
+					else {
+						f->replaceAllUsesWith(f2);
+						f->eraseFromParent();
+					}
+                } else {
+				klee_xqx_debug("set func %s ", unprefixed.c_str());
+                    f->setName(unprefixed);
+                }
+            }
+        }
+    }
+
+}
 
 int main(int argc, char **argv, char **envp) {  
 #if ENABLE_STPLOG == 1
@@ -1310,6 +1370,13 @@ int main(int argc, char **argv, char **envp) {
             /*CheckDivZero=*/CheckDivZero,
             /*CheckOvershift=*/CheckOvershift);
 
+  if( LibRuntime ) {
+	  klee_message("XQX: using lib %s", LibPathFile.c_str());
+	  mainModule = klee::linkWithLibrary(mainModule, LibPathFile);
+	  assert(mainModule && "unable to link with libpng");
+
+  }
+
     switch (Libc) {
         case NoLibc: /* silence compiler warning */
             break;
@@ -1332,6 +1399,7 @@ int main(int argc, char **argv, char **envp) {
                        break;
     }
 
+
     if (WithPOSIXRuntime) {
         llvm::sys::Path Path(Opts.LibraryDir);
         Path.appendComponent("libkleeRuntimePOSIX.bca");
@@ -1340,13 +1408,15 @@ int main(int argc, char **argv, char **envp) {
         assert(mainModule && "unable to link with simple model");
     }  
 
+    if (UseLibelf) {
+        llvm::sys::Path Path(Opts.LibraryDir);
+        Path.appendComponent("libelf.bca");
+        klee_message("NOTE: Using model: %s", Path.c_str());
+        mainModule = klee::linkWithLibrary(mainModule, Path.c_str());
+        assert(mainModule && "unable to link with simple model");
+    }  
 
-  if( LibRuntime ) {
-	  klee_message("XQX: using lib %s", LibPathFile.c_str());
-	  mainModule = klee::linkWithLibrary(mainModule, LibPathFile);
-	  assert(mainModule && "unable to link with libpng");
 
-  }
 
   std::string libz = "/home/xqx/data/xqx/projects/benckmarks-klee/zlib-1.2.8/build-wllvm/lib/libz.bca";
   if( LibRuntime ) {
@@ -1356,6 +1426,8 @@ int main(int argc, char **argv, char **envp) {
 
   }
 
+  //addbyxqx201412
+  StripFunc64(mainModule);
 
     // Get the desired main function.  klee_main initializes uClibc
     // locale and other data and then calls main.

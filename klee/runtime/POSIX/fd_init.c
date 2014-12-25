@@ -325,12 +325,18 @@ exe_disk_file_t* klee_create_cp_file(const char* path, int flags) {
   fsize = native_read_file(path, flags, &buf);
   if (fsize < 0)
     return NULL;
+
+#ifdef XQX_DEBUG_PNG
+  if(fsize > 4)
+  fprintf(stderr, "klee_read_file size=%x, head: %x-%x-%x-%x \n", fsize, buf[0],buf[1],buf[2],buf[3]);
+#endif
+
   stat64(".", &def);
   for (k=0; k < __exe_fs.n_cp_files; k++) {
     if (!__exe_fs.cp_files[k].stat) {
       __exe_fs.cp_files[k].path = (char*)malloc(strlen(path)+1);
       strcpy(__exe_fs.cp_files[k].path, path);
-      __xqx_create_new_dfile(&__exe_fs.cp_files[k], fsize, buf, path, &__sym_parts, 1, &def, 0);
+      __xqx_create_new_dfile(&__exe_fs.cp_files[k], fsize, buf, path, &__sym_parts, __sym_parts.num, &def, 0);
       
       return &__exe_fs.cp_files[k];
     }

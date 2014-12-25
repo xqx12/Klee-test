@@ -85,7 +85,7 @@ static exe_disk_file_t *__xqx_get_sym_file(const char *pathname, bool cp_sym, un
 	  const char* concrete_path = pathname;
 	  exe_disk_file_t *df = NULL;
 
-#define XQX_TEST_PNG
+/*#define XQX_TEST_PNG*/
 #ifdef XQX_TEST_PNG
 	  fprintf(stderr, "specified file is : %s" , __sym_parts.path);
 	  /*if( strcmp(concrete_path, "/tmp/pngtest.png") != 0 ) */
@@ -466,7 +466,11 @@ ssize_t read(int fd, void *buf, size_t count) {
     assert(f->off >= 0);
     if (((off64_t)f->dfile->size) < f->off)
       return 0;
-
+#define XQX_TEST_PNG
+#ifdef XQX_TEST_PNG
+	  fprintf(stderr, "readfile file from %s, off=%x, count=%x \n", 
+			  f->dfile->path, f->off, count  );
+#endif
     /* symbolic file */
     if (f->off + count > f->dfile->size) {
       count = f->dfile->size - f->off;

@@ -74,6 +74,11 @@ off64_t lseek(int fd, off64_t offset, int whence) {
   return __fd_lseek(fd, offset, whence);
 }
 
+//addbyxqx
+/*off64_t lseek64(int fd, off64_t offset, int whence) {*/
+  /*return __fd_lseek(fd, offset, whence);*/
+/*}*/
+
 int __xstat(int vers, const char *path, struct stat *buf) {
   return __fd_stat(path, (struct stat64*) buf);
 }

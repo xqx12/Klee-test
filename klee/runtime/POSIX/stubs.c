@@ -550,3 +550,14 @@ int munmap(void*start, size_t length) {
   errno = EPERM;
   return -1;
 }
+
+//addbyxqx201412
+//for some program use __strdup in string2.h, but not linked by klee
+#undef __strdup
+#undef strdup
+char *__strdup(const char *s) __attribute__((weak));
+char *__strdup(const char *s) {
+	klee_warning("ignoring (EPERM)");
+	errno = EPERM;
+	return strdup(s);
+}
