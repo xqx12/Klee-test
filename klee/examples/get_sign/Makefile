@@ -20,6 +20,10 @@ all:
 	#$(KLEE)  --emit-all-errors ${OBJECTS} --sym-args 1 1 1 1> klee.log 2>&1 && vim klee.log
 	#$(KLEE)  --libc=uclibc -posix-runtime --emit-all-errors ${OBJECTS} 2>&1 | tee  klee.log && vim klee.log
 	#$(KLEE)  --emit-all-errors ${OBJECTS} 2>&1 | tee  klee.log && vim klee.log
+
+bap:
+	$(KLEE)  --libc=uclibc -posix-runtime --emit-all-errors get_sign.bap.bc --sym-args 1 1 1  1> bapklee.log 2>&1 && vim bapklee.log
+
 	
 sim: 
 	$(LLVMGCC) -O0 -g --emit-llvm -c ${CFILES} 

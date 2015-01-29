@@ -19,7 +19,7 @@ int get_sign(int x) {
 
 int main(int argc, char *argv[]) {
   int a;
-  klee_make_symbolic(&a, sizeof(a), "a");
+  /*klee_make_symbolic(&a, sizeof(a), "a");*/
   /*a = atoi(argv[1]);*/
   return get_sign(a);
 } 

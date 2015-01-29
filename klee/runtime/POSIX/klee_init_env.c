@@ -347,7 +347,7 @@ usage: (klee_init_env) [options] [program arguments]\n\
 #endif
 
     else if (__streq(argv[k], "--xqx-sym-file") || __streq(argv[k], "-xqx-sym-file")) {
-	  const char* msg = "--xqx-sym-files expects three integer arguments name offset len method";      
+	  const char* msg = "--xqx-sym-file expects three integer arguments name offset len method";      
 		
       if (k+4 >= argc)
 		  __emit_error(msg);
@@ -364,7 +364,7 @@ usage: (klee_init_env) [options] [program arguments]\n\
       __sym_parts.sym_buf[n_sym_file].length = __str_to_int(argv[k++], msg);
       __sym_parts.fill_method = __str_to_int(argv[k++], msg);
 	  
-	  __sym_parts.num = n_sym_file++;
+	  __sym_parts.num = ++n_sym_file;
 
 
 	}

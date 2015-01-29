@@ -1225,7 +1225,7 @@ void StripFunc64(llvm::Module *mainModule)
         Function *f = fi;
 		++fi;
         const std::string &name = f->getName();
-				klee_xqx_debug(" func %s ", name.c_str());
+				//klee_xqx_debug(" func %s ", name.c_str());
         if (name[0]=='\01' && name.find("open64") == std::string::npos &&
 				name.find("__xstat64") == std::string::npos) {
             unsigned size = name.size();

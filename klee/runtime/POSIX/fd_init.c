@@ -397,6 +397,7 @@ void __xqx_make_file_symbolic(exe_disk_file_t* dfile, char* orig_content, const 
 #endif
 				if( p->sym_buf[i].offset + p->sym_buf[i].length > dfile->size ){
 					klee_warning("xqx_make_file_symbolic fill_sym error: out file bound");
+					fprintf(stderr, "xqx_make_file_symbolic fill_sym error: out file bound");
 					return;
 				}
 				memcpy( dfile->contents, orig_content, dfile->size);

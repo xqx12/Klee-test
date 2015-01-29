@@ -466,7 +466,7 @@ ssize_t read(int fd, void *buf, size_t count) {
     assert(f->off >= 0);
     if (((off64_t)f->dfile->size) < f->off)
       return 0;
-#define XQX_TEST_PNG
+/*#define XQX_TEST_PNG*/
 #ifdef XQX_TEST_PNG
 	  fprintf(stderr, "readfile file from %s, off=%x, count=%x \n", 
 			  f->dfile->path, f->off, count  );
