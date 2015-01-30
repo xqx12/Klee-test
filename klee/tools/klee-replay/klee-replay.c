@@ -38,6 +38,9 @@ static char *rootdir = NULL;
 static struct option long_options[] = {
   {"create-files-only", required_argument, 0, 'f'},
   {"chroot-to-dir", required_argument, 0, 'r'},
+  {"replace-obj", required_argument, 0, 'p'},
+  {"obj-file", required_argument, 0, 'o'},
+  {"ktest-file", required_argument, 0, 'k'},
   {"help", no_argument, 0, 'h'},
   {0, 0, 0, 0},
 };
@@ -243,6 +246,9 @@ static void usage(void) {
   fprintf(stderr, "   or: %s --create-files-only <ktest-file>\n", progname);
   fprintf(stderr, "\n");
   fprintf(stderr, "-r, --chroot-to-dir=DIR  use chroot jail, requires CAP_SYS_CHROOT\n");
+  fprintf(stderr, "-p, --replace-obj=OBJ-NAME  replace an obj in ktest, \n");
+  fprintf(stderr, "-r, --obj-file=OBJ-FILE  the file to replace, after --replace-obj\n");
+  fprintf(stderr, "-k, --ktest-file=ktest  the ktest file to be replaced, \n");
   fprintf(stderr, "-h, --help               display this help and exit\n");
   fprintf(stderr, "\n");
   fprintf(stderr, "Use KLEE_REPLAY_TIMEOUT environment variable to set a timeout (in seconds).\n");
@@ -255,11 +261,17 @@ int main(int argc, char** argv) {
 
   progname = argv[0];
 
+  //addbyxqx201501
+  char *objname = NULL;
+  char *objfile = NULL;
+  char *ktestfile = NULL;
+  int  objsize = 0;
+
   if (argc < 3)
     usage();
 
   int c, opt_index;
-  while ((c = getopt_long(argc, argv, "f:r:", long_options, &opt_index)) != -1) {
+  while ((c = getopt_long(argc, argv, "f:r:p:o:k:s:", long_options, &opt_index)) != -1) {
     switch (c) {
       case 'f': {
         /* Special case hack for only creating files and not actually executing
@@ -288,8 +300,61 @@ int main(int argc, char** argv) {
       case 'r':
         rootdir = optarg;
         break;
+	  case 'k':
+		ktestfile = optarg;
+		break;
+	  case 'p':
+		objname = optarg;
+		break;
+	  case 'o':
+		objfile = optarg;
+		break;
+	  case 's':
+		objsize = atoi(optarg);
+		break;
     }
   }
+
+
+  //addbyxqx201501 for replace an object in ktest, for concolic execution as a seed
+  if( ktestfile && objname && objfile ) {
+
+	  input = kTest_fromFile(ktestfile);
+	  int i;
+	  for ( i=0; i<input->numObjects; i++) {
+		  KTestObject *o = &input->objects[i];
+		  if(!strcmp(o->name, objname)) {
+			  //if find the obj to replace.
+			  FILE *ofile = fopen(objfile, "rb");
+			  if(!ofile) {
+				  fprintf(stderr, "open file error: %s\n", objfile);
+				  return 1;
+			  }
+			  if( objsize == 0) objsize = o->numBytes;
+			  char *pbuf = (unsigned char*) malloc(objsize);
+			  if(fread(pbuf, objsize, 1, ofile)!=1) {
+				  fprintf(stderr, "read file error: %s\n", objfile);
+				  return 1;
+			  }
+			  o->numBytes = objsize;
+
+			  fclose(ofile);
+
+			  o->bytes = pbuf;
+
+			  char newfile[256] = {0};
+			  sprintf(newfile, "%s.new", ktestfile);
+			  kTest_toFile(input,newfile);
+			  fprintf(stderr, "replace ok\n");
+			  return 0;
+
+		  }
+		  
+	  }
+	  return 1;
+  }
+
+
 
   /* Normal execution path ... */
 

@@ -27,6 +27,8 @@
 #define XQX_CMA_CHECK
 #define XQX_CONCRETE_EXEC
 #define XQX_RESOLVE_ADDR
+#define XQX_DEBUG_CONCOLIC
+#define XQX_DEBUG_SEED
 
 #include <stdio.h>
 

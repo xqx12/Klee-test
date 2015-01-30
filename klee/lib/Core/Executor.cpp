@@ -126,6 +126,7 @@ using namespace metaSMT::solver;
 #endif /* SUPPORT_METASMT */
 
 
+static unsigned forknum = 0;
 //for print dbug info addbyxqx20140325
 //#define xDEBUG  
 //#undef XQX_DEBUG
@@ -766,6 +767,16 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 	std::map< ExecutionState*, std::vector<SeedInfo> >::iterator it = 
 		seedMap.find(&current);
 	bool isSeeding = it != seedMap.end();
+
+
+#ifdef XQX_DEBUG_CONCOLIC
+	forknum++;
+		//klee_xqx_debug("fork-----------");
+		//condition->dump();
+		//printFileLine(current, current.pc);
+		//klee_xqx_debug("fork-----------end");
+#endif
+
 #if 1
 #ifdef XQX_DEBUG
 	ref<Expr> simpCond = current.constraints.simplifyExpr(condition);
@@ -2961,6 +2972,9 @@ dump:
 		}
 		updateStates(0);
 	}
+#ifdef XQX_DEBUG_CONCOLIC
+	klee_xqx_debug("fork num = %d", forknum);
+#endif
 }
 
 std::string Executor::getAddressInfo(ExecutionState &state, 
@@ -3793,6 +3807,7 @@ void Executor::executeMakeSymbolic(ExecutionState &state,
 				}
 				else {
 					KTestObject *obj = si.getNextInput(mo, NamedSeedMatching);
+					klee_xqx_debug("seed find mo name=%s",mo->name.c_str());
 
 					if (!obj) {
 						if (ZeroSeedExtension) {
@@ -3821,6 +3836,9 @@ void Executor::executeMakeSymbolic(ExecutionState &state,
 									"user.err");
 							break;
 						} else {
+#ifdef XQX_DEBUG_SEED
+							klee_xqx_debug("seed insert name=%s,numBytes=%d",obj->name,obj->numBytes);
+#endif
 							std::vector<unsigned char> &values = si.assignment.bindings[array];
 							values.insert(values.begin(), obj->bytes, 
 									obj->bytes + std::min(obj->numBytes, mo->size));
