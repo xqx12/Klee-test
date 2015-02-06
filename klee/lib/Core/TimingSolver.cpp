@@ -27,8 +27,11 @@ using namespace llvm;
 /***/
 
 ref<Expr> TimingSolver::ZESTEvaluate(const ExecutionState& state, ref<Expr> expr) {
-#ifdef XQX_CONCRETE_EXEC
-	klee_xqx_debug( "ZESTEvaluate \n" ) ;
+#ifdef XQX_DEBUG_CONCRETE_EXEC
+	klee_xqx_debug( "ZESTEvaluate " ) ;
+	klee_xqx_debug( "orig expr---------------------------" ) ;
+	expr->dump();
+	klee_xqx_debug( "orig expr---------------------------" ) ;
 #endif
   std::map<ExecutionState*, std::vector<SeedInfo> >::iterator its =
     seedMap->find(const_cast<ExecutionState*>(&state));
@@ -40,7 +43,14 @@ ref<Expr> TimingSolver::ZESTEvaluate(const ExecutionState& state, ref<Expr> expr
     std::vector<SeedInfo>::iterator siit = its->second.begin();
 
     if (siit != its->second.end()) {
-      return siit->assignment.evaluate(expr);
+	  ref<Expr> tmpExpr = siit->assignment.evaluate(expr);
+#ifdef XQX_DEBUG_CONCRETE_EXEC
+	  klee_xqx_debug( "zesti expr---------------------------" ) ;
+	  tmpExpr->dump();
+	  klee_xqx_debug( "zesti expr---------------------------" ) ;
+#endif
+	  return tmpExpr;
+      //return siit->assignment.evaluate(expr);
     }
   }
   return expr;

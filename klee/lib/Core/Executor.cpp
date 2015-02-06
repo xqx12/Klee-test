@@ -128,7 +128,6 @@ using namespace metaSMT::solver;
 
 static unsigned forknum = 0;
 //for print dbug info addbyxqx20140325
-//#define xDEBUG  
 //#undef XQX_DEBUG
 
 namespace {
@@ -981,7 +980,7 @@ Executor::fork(ExecutionState &current, ref<Expr> condition, bool isInternal) {
 			for (std::vector<SeedInfo>::iterator siit = seeds.begin(), 
 					siie = seeds.end(); siit != siie; ++siit) {
 #ifdef XQX_DEBUG
-		  klee_xqx_debug("seed branch %d-------------------",++index);
+		  klee_xqx_debug("seed %d branch -------------------",++index);
 		SeedInfo *si = &*siit;
 		//si->printSeedInfo();
 		  klee_xqx_debug("condition is:-------------------");
@@ -1096,16 +1095,21 @@ void Executor::addConstraint(ExecutionState &state, ref<Expr> condition) {
 ref<klee::ConstantExpr> Executor::evalConstant(const Constant *c) {
 	if (const llvm::ConstantExpr *ce = dyn_cast<llvm::ConstantExpr>(c)) {
 		return evalConstantExpr(ce);
-	} else {
+	} 
+	else {
 		if (const ConstantInt *ci = dyn_cast<ConstantInt>(c)) {
 			return ConstantExpr::alloc(ci->getValue());
-	} else if (const ConstantFP *cf = dyn_cast<ConstantFP>(c)) {      
-		return ConstantExpr::alloc(cf->getValueAPF().bitcastToAPInt());
-		} else if (const GlobalValue *gv = dyn_cast<GlobalValue>(c)) {
+		} 
+		else if (const ConstantFP *cf = dyn_cast<ConstantFP>(c)) {      
+			return ConstantExpr::alloc(cf->getValueAPF().bitcastToAPInt());
+		} 
+		else if (const GlobalValue *gv = dyn_cast<GlobalValue>(c)) {
 			return globalAddresses.find(gv)->second;
-		} else if (isa<ConstantPointerNull>(c)) {
+		} 
+		else if (isa<ConstantPointerNull>(c)) {
 			return Expr::createPointer(0);
-		} else if (isa<UndefValue>(c) || isa<ConstantAggregateZero>(c)) {
+		} 
+		else if (isa<UndefValue>(c) || isa<ConstantAggregateZero>(c)) {
 			return ConstantExpr::create(0, getWidthForLLVMType(c->getType()));
 #if LLVM_VERSION_CODE >= LLVM_VERSION(3, 1)
 		} else if (const ConstantDataSequential *cds =
@@ -1545,9 +1549,9 @@ void Executor::printFileLine(ExecutionState &state, KInstruction *ki) {
 	Function *f = ki->inst->getParent()->getParent();
 	const InstructionInfo &ii = *ki->info;
 	if (ii.file != "") 
-		std::cerr << "loc: " << f->getName().str() << " - " << ii.file << ":" << ii.line << ":"  << "\n";
+		std::cerr << "loc: " << f->getName().str() << " - " << ii.file << ":" << ii.line << ":" << ii.assemblyLine  << ".\n";
 	else
-		std::cerr << "loc: " << f->getName().str() << " - " << "     [no debug info]:\n";
+		std::cerr << "loc: " << f->getName().str() << " - asm:" << ii.assemblyLine << "     [no debug info]:\n";
 }
 
 /// Compute the true target of a function call, resolving LLVM and KLEE aliases
@@ -2255,8 +2259,15 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 			}
 		case Instruction::Store: 
 			{
+#ifdef XQX_DEBUG
+				//printFileLine( state, ki);
+#endif
 				ref<Expr> base = eval(ki, 1, state).value;
 				ref<Expr> value = eval(ki, 0, state).value;
+				klee_xqx_debug("store inst: base , value");
+				base->dump();
+				value->dump();
+				klee_xqx_debug("--------------------");
 				executeMemoryOperation(state, true, base, value, 0);
 				break;
 			}
@@ -3552,29 +3563,22 @@ void Executor::resolveExact(ExecutionState &state,
 				getAddressInfo(*unbound, p));
 	}
 }
-//#define xDEBUG
+//#define XQX_DEBUG_EXECUTE_MEM
 void Executor::executeMemoryOperation(ExecutionState &state,
 		bool isWrite,
 		ref<Expr> address,
 		ref<Expr> value /* undef if read */,
 		KInstruction *target /* undef if write */) {
-#ifdef xDEBUG
+#ifdef XQX_DEBUG_EXECUTE_MEM
 	klee_message("[xqx]:--executeMemoryOperation-- in state[%d] ", state.id);
-	printFileLine(state, state.prevPC);
+	//printFileLine(state, state.prevPC);
 	std::ostringstream info;
 	info << "inst:" << std::setw(10) << stats::instructions << " \n";
 	if(target != NULL){
-		//Instruction *i = target->inst;
-		//i->dump();
-		//klee_message("read from ");
-		//address->dump();
 		info << std::hex << "read from " << address << "\n";
 	}
 	else 
 	{
-		//value->dump();
-		//klee_message("write to ");
-		//address->dump();
 		info << std::hex << "write " << value << " to " << address << "\n";
 	}
 	klee_message("%s", info.str().c_str());
@@ -3604,8 +3608,8 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 		address = toConstant(state, address, "resolveOne failure");
 		success = state.addressSpace.resolveOne(cast<ConstantExpr>(address), op);
 	}
-#undef xDEBUG
-#ifdef xDEBUG
+#ifdef XQX_DEBUG_EXECUTE_MEM
+	klee_message("[xqx]--Before Operate++++++++++++++++++++++++++++");
 	klee_message("[xqx]--addressSpace.objects.size() = %d", state.addressSpace.objects.size());
 	const MemoryObject *tmpMo = op.first;
 	const ObjectState *tmpOs = op.second;
@@ -3617,6 +3621,7 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 	klee_message("[xqx]--Objectstate-print------------------------");
 	tmpOs->print();
 	klee_message("[xqx]--Objectstate-print-----------------------end-");
+	klee_message("[xqx]--Before Operate++++++++++++++++++++++++++++end");
 #endif
 	solver->setTimeout(0);
 
@@ -3651,6 +3656,7 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 				} else {
 					ObjectState *wos = state.addressSpace.getWriteable(mo, os);
 					wos->write(offset, value);
+					tmpOs = wos;
 				}          
 			} else {
 				ref<Expr> result = os->read(offset, type);
@@ -3660,10 +3666,20 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 
 				bindLocal(target, state, result);
 			}
-
+			
+#ifdef XQX_DEBUG_EXECUTE_MEM
+	klee_message("[xqx]--After Operate============================");
+	klee_message("[xqx]--addressSpace.objects.size() = %d", state.addressSpace.objects.size());
+	klee_message("[xqx]--Objectstate-print------------------------");
+	tmpOs->print();
+	klee_message("[xqx]--Objectstate-print-----------------------end-");
+	klee_message("[xqx]--After Operate============================end");
+#endif
+	
 			return;
 		}
 	} 
+
 
 	// we are on an error path (no resolution, multiple resolution, one
 	// resolution with out of bounds)
@@ -3681,7 +3697,7 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 	for (ResolutionList::iterator i = rl.begin(), ie = rl.end(); i != ie; ++i) {
 		const MemoryObject *mo = i->first;
 		const ObjectState *os = i->second;
-#ifdef xDEBUG
+#ifdef XQX_DEBUG_EXECUTE_MEM
 		ref<Expr> rbase1 = mo->getBaseExpr();
 		ref<Expr> rsize1 = mo->getSizeExpr();
 		klee_message("[xqx]--MemoryObject--base & size---");
@@ -4275,10 +4291,18 @@ bool Executor::doSizeControlledMalloc(ExecutionState &state,
 						//fixedSize.second->stateRange.second->dump();
 #endif
 
-						terminateStateOnError(*fixedSize.second, 
-								"controlled symbolic size", 
-								"cma.err", 
-								info.str());
+						std::map< ExecutionState*, std::vector<SeedInfo> >::iterator it = 
+						seedMap.find(fixedSize.second);
+						bool isSeeding = it != seedMap.end();
+						if( isSeeding )  {   // here will not be run in if in seed mode, because the example vuale should be get from seed.
+							executeAlloc(*fixedSize.second, example, isLocal, 
+									target, zeroMemory, reallocFrom);
+						}
+						else
+							terminateStateOnError(*fixedSize.second, 
+									"controlled symbolic size", 
+									"cma.err", 
+									info.str());
 					}
 					if (fixedSize.first) // can be zero when fork fails
 					{

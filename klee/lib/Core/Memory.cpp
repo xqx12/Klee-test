@@ -363,6 +363,10 @@ void ObjectState::markByteSymbolic(unsigned offset) {
 void ObjectState::markByteUnflushed(unsigned offset) {
 	if (flushMask)
 		flushMask->set(offset);
+#ifdef XQX_DEBUG_EXECUTE_MEM
+	//else
+		//klee_xqx_debug("flushMask not exist");
+#endif
 }
 
 void ObjectState::markByteFlushed(unsigned offset) {

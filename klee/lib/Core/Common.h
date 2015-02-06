@@ -18,12 +18,14 @@
 
 #define XQX_DEBUG
 //#define XQX_DEBUG_1
+//#define xDEBUG   //for executeMemory Debug
 #define XQX_INFO
 //#define XQX_DEBUG_ENV
 //#define XQX_DEBUG_STATE
 #define XQX_DEBUG_SHOW_EACH_FORK
 //#define XQX_DEBUG_FORK_DUMP_STACK
-#define XQX_DEBUG_PRINT_RANGE
+//#define XQX_DEBUG_PRINT_RANGE
+#define XQX_DEBUG_EXECUTE_MEM  
 #define XQX_CMA_CHECK
 #define XQX_CONCRETE_EXEC
 #define XQX_RESOLVE_ADDR

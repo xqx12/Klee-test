@@ -54,6 +54,18 @@ m32:
 #	klee --libc=uclibc -posix-runtime --emit-all-errors bench_test.o --sym-args 2 2 5
 	$(KLEE) --libc=uclibc -posix-runtime --emit-all-errors ${OBJECTS} --sym-args 1 1 1 1> klee.log 2>&1 && vim klee.log
 
+concrete:
+	$(LLVMGCC) -g --emit-llvm -c ${CFILES} 
+	$(KLEED) --debug-print-instructions --write-cov --emit-all-errors ${OBJECTS} 100 2>&1 |tee conklee.log
+
+symbolic:
+	$(LLVMGCC) -g --emit-llvm -D MAKE_SYMBOLIC -c ${CFILES} 
+	$(KLEED) --debug-print-instructions --write-cov --emit-all-errors ${OBJECTS} 2>&1 |tee symklee.log
+
+onlyseed:
+	$(LLVMGCC) -g --emit-llvm -D MAKE_SYMBOLIC -c ${CFILES} 
+	$(KLEED) --debug-print-instructions --write-cov --dump-states-on-halt=false --only-seed --seed-out=./minus.ktest --emit-all-errors ${OBJECTS} 2>&1 |tee onlyseedklee.log
+
 
 clean:
 	rm -rf *.o *.out
