@@ -761,7 +761,13 @@ void SpecialFunctionHandler::handleMakeSymbolic(ExecutionState &state,
     assert(success && "FIXME: Unhandled solver failure");
     
     if (res) {
+#ifdef XQX_SAGE
+		klee_xqx_debug("print os makesymbolic");
+		old->makeConcolic();
+      executor.executeMakeSymbolic(*s, mo, name, old);
+#else
       executor.executeMakeSymbolic(*s, mo, name);
+#endif
     } else {      
       executor.terminateStateOnError(*s, 
                                      "wrong size given to klee_make_symbolic[_name]", 

@@ -1177,15 +1177,45 @@ const Cell& Executor::eval(KInstruction *ki, unsigned index,
 	}
 }
 
+#ifdef XQX_SAGE
+const Cell& Executor::evalConcolic(KInstruction *ki, unsigned index, 
+		ExecutionState &state) const {
+	assert(index < ki->inst->getNumOperands());
+	int vnumber = ki->operands[index];
+
+	assert(vnumber != -1 &&
+			"Invalid operand to eval(), not a value or constant!");
+
+	// Determine if this is a constant or not.
+	if (vnumber < 0) {
+		unsigned index = -vnumber - 2;
+		return kmodule->constantTable[index];
+	} else {
+		unsigned index = vnumber;
+		StackFrame &sf = state.stack.back();
+		return sf.sd_locals[index];
+	}
+}
+#endif
+
 void Executor::bindLocal(KInstruction *target, ExecutionState &state, 
 		ref<Expr> value) {
 	getDestCell(state, target).value = value;
 }
-
 void Executor::bindArgument(KFunction *kf, unsigned index, 
 		ExecutionState &state, ref<Expr> value) {
 	getArgumentCell(state, kf, index).value = value;
 }
+#ifdef XQX_SAGE
+void Executor::bindLocalConcolic(KInstruction *target, ExecutionState &state, 
+		ref<Expr> value) {
+	getDestSDCell(state, target).value = value;
+}
+void Executor::bindArgumentConcolic(KFunction *kf, unsigned index, 
+		ExecutionState &state, ref<Expr> value) {
+	getArgumentSDCell(state, kf, index).value = value;
+}
+#endif
 
 ref<Expr> Executor::toUnique(const ExecutionState &state, 
 		ref<Expr> &e) {
@@ -1370,7 +1400,7 @@ void Executor::executeCall(ExecutionState &state,
 
 	Instruction *i = ki->inst;
 	if (f && f->isDeclaration()) {
-		//klee_message("[xqx]: executeCall which is declaration, func = %s ", f->getName().data());
+		klee_message("[xqx]: executeCall which is declaration, func = %s ", f->getName().data());
 		switch(f->getIntrinsicID()) {
 			case Intrinsic::not_intrinsic:
 				// state may be destroyed by this call, cannot touch
@@ -1436,7 +1466,7 @@ void Executor::executeCall(ExecutionState &state,
 			transferToBasicBlock(ii->getNormalDest(), i->getParent(), state);
 	}
 	else {
-		//klee_message("[xqx]: executeCall which is not declaration, func = %s ", f->getName().data());
+		klee_message("[xqx]: executeCall which is not declaration, func = %s ", f->getName().data());
 
 		// FIXME: I'm not really happy about this reliance on prevPC but it is ok, I
 		// guess. This just done to avoid having to pass KInstIterator everywhere
@@ -1517,7 +1547,7 @@ void Executor::executeCall(ExecutionState &state,
 			//arguments[i]->dump();
 		}
 
-		//klee_message("[xqx]: executeCall bindArgument %d args ", numFormals);
+		klee_message("[xqx]: executeCall bindArgument %d args ", numFormals);
 	}
 }
 
@@ -1852,6 +1882,12 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 				for (unsigned j=0; j<numArgs; ++j)
 					arguments.push_back(eval(ki, j+1, state).value);
+#ifdef XQX_SAGE
+				std::vector< ref<Expr> > sd_arguments;
+				sd_arguments.reserve(numArgs);
+				for (unsigned j=0; j<numArgs; ++j)
+					sd_arguments.push_back(evalConcolic(ki, j+1, state).value);
+#endif
 
 				if (f) {
 					/*
@@ -1911,8 +1947,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 							i++;
 						}
 					}
-
+#ifdef XQX_SAGE
+					executeCall(state, ki, f, arguments, sd_arguments);
+#else
 					executeCall(state, ki, f, arguments);
+#endif
 				} 
 				else {
 					ref<Expr> v = eval(ki, 0, state).value;
@@ -1943,7 +1982,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				//klee_message("[xqx]===exec inst in Call (not direct)=================");
 				//klee_message("[xqx]: call func = %s ", f->getName().data());
 				//klee_message("[xqx]-------------------------------------");
+#ifdef XQX_SAGE
+								executeCall(*res.first, ki, f, arguments, sd_arguments);
+#else
 								executeCall(*res.first, ki, f, arguments);
+#endif
 							} 
 							else {
 								if (!hasInvalid) {
@@ -2254,21 +2297,33 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 		case Instruction::Load: 
 			{
 				ref<Expr> base = eval(ki, 0, state).value;
+#ifdef XQX_SAGE
+				ref<Expr> conBase = evalConcolic(ki, 0, state).value;
+				executeMemoryOperation(state, false, base, 0, ki, conBase, 0);
+#else
 				executeMemoryOperation(state, false, base, 0, ki);
+#endif
 				break;
 			}
 		case Instruction::Store: 
 			{
-#ifdef XQX_DEBUG
-				//printFileLine( state, ki);
-#endif
 				ref<Expr> base = eval(ki, 1, state).value;
 				ref<Expr> value = eval(ki, 0, state).value;
+#ifdef XQX_SAGE
 				klee_xqx_debug("store inst: base , value");
 				base->dump();
 				value->dump();
+				ref<Expr> conBase = evalConcolic(ki, 1, state).value;
+				ref<Expr> conValue = evalConcolic(ki, 0, state).value;
+				klee_xqx_debug("store inst: conBase , conValue");
+				conBase->dump();
+				conValue->dump();
 				klee_xqx_debug("--------------------");
+				executeMemoryOperation(state, true, base, value, 0, conBase, conValue);
+#else
 				executeMemoryOperation(state, true, base, value, 0);
+#endif
+
 				break;
 			}
 
@@ -3299,8 +3354,17 @@ ref<Expr> Executor::replaceReadWithSymbolic(ExecutionState &state,
 ObjectState *Executor::bindObjectInState(ExecutionState &state, 
 		const MemoryObject *mo,
 		bool isLocal,
-		const Array *array) {
+		const Array *array
+#ifdef XQX_SAGE
+		,const ObjectState *old
+#endif 
+		) {
 	ObjectState *os = array ? new ObjectState(mo, array) : new ObjectState(mo);
+#ifdef XQX_SAGE
+	if(old) {
+		os->copyConcolic(old);
+	}
+#endif
 	state.addressSpace.bindObject(mo, os);
 
 	// Its possible that multiple bindings of the same mo in the state
@@ -3360,6 +3424,9 @@ void Executor::executeAlloc(ExecutionState &state,
 				os->initializeToRandom();
 			}
 			bindLocal(target, state, mo->getBaseExpr());
+#ifdef XQX_SAGE
+			bindLocalConcolic(target, state, mo->getBaseExpr());
+#endif
 
 			if (reallocFrom) {
 				unsigned count = std::min(reallocFrom->size, os->size);
@@ -3656,7 +3723,14 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 				} else {
 					ObjectState *wos = state.addressSpace.getWriteable(mo, os);
 					wos->write(offset, value);
-					tmpOs = wos;
+#ifdef XQX_DEBUG_EXECUTE_MEM
+	klee_message("[xqx]--After Operate============================");
+	klee_message("[xqx]--addressSpace.objects.size() = %d", state.addressSpace.objects.size());
+	klee_message("[xqx]--Objectstate-print------------------------");
+	wos->print();
+	klee_message("[xqx]--Objectstate-print-----------------------end-");
+	klee_message("[xqx]--After Operate============================end");
+#endif
 				}          
 			} else {
 				ref<Expr> result = os->read(offset, type);
@@ -3665,17 +3739,15 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 					result = replaceReadWithSymbolic(state, result);
 
 				bindLocal(target, state, result);
-			}
-			
+
 #ifdef XQX_DEBUG_EXECUTE_MEM
 	klee_message("[xqx]--After Operate============================");
-	klee_message("[xqx]--addressSpace.objects.size() = %d", state.addressSpace.objects.size());
-	klee_message("[xqx]--Objectstate-print------------------------");
-	tmpOs->print();
-	klee_message("[xqx]--Objectstate-print-----------------------end-");
+				result->dump();
 	klee_message("[xqx]--After Operate============================end");
 #endif
-	
+			}
+			
+
 			return;
 		}
 	} 
@@ -3744,6 +3816,204 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 	}
 }
 
+#ifdef XQX_SAGE
+void Executor::executeMemoryOperation(ExecutionState &state,
+		bool isWrite,
+		ref<Expr> address,
+		ref<Expr> value /* undef if read */,
+		KInstruction *target /* undef if write */,
+		ref<Expr> conAddress,
+		ref<Expr> conValue) {
+#ifdef XQX_DEBUG_EXECUTE_MEM
+	klee_message("[xqx]:--executeMemoryOperation-- in state[%d] ", state.id);
+	//printFileLine(state, state.prevPC);
+	std::ostringstream info;
+	info << "inst:" << std::setw(10) << stats::instructions << " \n";
+	if(target != NULL){
+		info << std::hex << "read from " << address << "\n";
+	}
+	else 
+	{
+		info << std::hex << "write " << value << " to " << address << "\n";
+	}
+	klee_message("%s", info.str().c_str());
+#endif
+	Expr::Width type = (isWrite ? value->getWidth() : 
+			getWidthForLLVMType(target->inst->getType()));
+	//llvm::errs() << "type = " << type << "\n";
+	unsigned bytes = Expr::getMinBytesForWidth(type);
+
+	if (SimplifySymIndices) {
+		if (!isa<ConstantExpr>(address))
+			address = state.constraints.simplifyExpr(address);
+		if (isWrite && !isa<ConstantExpr>(value))
+			value = state.constraints.simplifyExpr(value);
+	}
+
+	// fast path: single in-bounds resolution
+	ObjectPair op;
+	bool success;
+	solver->setTimeout(coreSolverTimeout);
+
+	//if the address be resolved will return true, if resolve failed will return false, 
+	//such as checkthebound failed.
+	//if resolve success ,the bool success will be set to true
+	if (!state.addressSpace.resolveOne(state, solver, address, op, success)) {
+		klee_message("[xqx]:--resolveOne first--called ");
+		address = toConstant(state, address, "resolveOne failure");
+		success = state.addressSpace.resolveOne(cast<ConstantExpr>(address), op);
+	}
+#ifdef XQX_DEBUG_EXECUTE_MEM
+	klee_message("[xqx]--Before Operate++++++++++++++++++++++++++++");
+	klee_message("[xqx]--addressSpace.objects.size() = %d", state.addressSpace.objects.size());
+	const MemoryObject *tmpMo = op.first;
+	const ObjectState *tmpOs = op.second;
+	ref<Expr> rbase = tmpMo->getBaseExpr();
+	ref<Expr> rsize = tmpMo->getSizeExpr();
+	klee_message("[xqx]--MemoryObject--base & size---");
+	rbase->dump();
+	rsize->dump();
+	klee_message("[xqx]--Objectstate-print------------------------");
+	tmpOs->print();
+	klee_message("[xqx]--Objectstate-print-----------------------end-");
+	klee_message("[xqx]--Before Operate++++++++++++++++++++++++++++end");
+#endif
+	solver->setTimeout(0);
+
+	if (success) {
+		const MemoryObject *mo = op.first;
+
+		if (MaxSymArraySize && mo->size>=MaxSymArraySize) {
+			address = toConstant(state, address, "max-sym-array-size");
+		}
+
+		ref<Expr> offset = mo->getOffsetExpr(address);
+		ref<Expr> conOffset = mo->getOffsetExpr(conAddress);
+
+		bool inBounds;
+		solver->setTimeout(coreSolverTimeout);
+		bool success = solver->mustBeTrue(state, 
+				mo->getBoundsCheckOffset(offset, bytes),
+				inBounds);
+		solver->setTimeout(0);
+		if (!success) {
+			state.pc = state.prevPC;
+			terminateStateEarly(state, "Query timed out (bounds check).");
+			return;
+		}
+
+		if (inBounds) {
+			const ObjectState *os = op.second;
+			if (isWrite) {
+				if (os->readOnly) {
+					terminateStateOnError(state,
+							"memory error: object read only",
+							"readonly.err");
+				} else {
+					ObjectState *wos = state.addressSpace.getWriteable(mo, os);
+					wos->write(offset, value);
+#ifdef XQX_SAGE
+					wos->writeConcolic(conOffset, conValue);
+#endif
+#ifdef XQX_DEBUG_EXECUTE_MEM
+	klee_message("[xqx]--After Operate============================");
+	klee_message("[xqx]--addressSpace.objects.size() = %d", state.addressSpace.objects.size());
+	klee_message("[xqx]--Objectstate-print------------------------");
+	wos->print();
+	klee_message("[xqx]--Objectstate-print-----------------------end-");
+	klee_message("[xqx]--After Operate============================end");
+#endif
+				}          
+			} else {
+				ref<Expr> result = os->read(offset, type);
+
+				if (interpreterOpts.MakeConcreteSymbolic)
+					result = replaceReadWithSymbolic(state, result);
+
+				bindLocal(target, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> concolicResult = os->readConcolic(conOffset, type);
+				bindLocalConcolic(target, state, concolicResult);
+#endif
+
+#ifdef XQX_DEBUG_EXECUTE_MEM
+	klee_message("[xqx]--After Operate============================");
+				result->dump();
+				concolicResult->dump();
+	klee_message("[xqx]--After Operate============================end");
+#endif
+			}
+			
+
+			return;
+		}
+	} 
+
+
+	// we are on an error path (no resolution, multiple resolution, one
+	// resolution with out of bounds)
+
+	ResolutionList rl;  
+	solver->setTimeout(coreSolverTimeout);
+	bool incomplete = state.addressSpace.resolve(state, solver, address, rl,
+			0, coreSolverTimeout);
+	solver->setTimeout(0);
+
+	klee_message("[xqx]--ResolutionList size = %d---", rl.size());
+	// XXX there is some query wasteage here. who cares?
+	ExecutionState *unbound = &state;
+
+	for (ResolutionList::iterator i = rl.begin(), ie = rl.end(); i != ie; ++i) {
+		const MemoryObject *mo = i->first;
+		const ObjectState *os = i->second;
+#ifdef XQX_DEBUG_EXECUTE_MEM
+		ref<Expr> rbase1 = mo->getBaseExpr();
+		ref<Expr> rsize1 = mo->getSizeExpr();
+		klee_message("[xqx]--MemoryObject--base & size---");
+		rbase1->dump();
+		rsize1->dump();
+#endif
+		ref<Expr> inBounds = mo->getBoundsCheckPointer(address, bytes);
+
+		StatePair branches = fork(*unbound, inBounds, true);
+		ExecutionState *bound = branches.first;
+
+		// bound can be 0 on failure or overlapped 
+		if (bound) {
+			if (isWrite) {
+				if (os->readOnly) {
+					terminateStateOnError(*bound,
+							"memory error: object read only",
+							"readonly.err");
+				} else {
+					ObjectState *wos = bound->addressSpace.getWriteable(mo, os);
+					wos->write(mo->getOffsetExpr(address), value);
+				}
+			} else {
+				ref<Expr> result = os->read(mo->getOffsetExpr(address), type);
+				bindLocal(target, *bound, result);
+			}
+		}
+
+		unbound = branches.second;
+		if (!unbound)
+			break;
+	}
+
+	// XXX should we distinguish out of bounds and overlapped cases?
+	if (unbound) {
+		if (incomplete) {
+			terminateStateEarly(*unbound, "Query timed out (resolve).");
+		} else {
+			terminateStateOnError(*unbound,
+					"memory error: out of bound pointer",
+					"ptr.err",
+					getAddressInfo(*unbound, address));
+		}
+	}
+}
+
+#endif
 //addbyxqx201412 from zesti
 std::vector<unsigned char>
 Executor::readObjectAtAddress(ExecutionState &state, ref<Expr> addressExpr) {
@@ -3784,7 +4054,11 @@ Executor::readObjectAtAddress(ExecutionState &state, ref<Expr> addressExpr) {
 
 void Executor::executeMakeSymbolic(ExecutionState &state, 
 		const MemoryObject *mo,
-		const std::string &name) {
+		const std::string &name
+#ifdef XQX_SAGE
+		,const ObjectState *os
+#endif
+		) {
 	// Create a new object state for the memory object (instead of a copy).
 	if (!replayOut) {
 
@@ -3804,7 +4078,12 @@ void Executor::executeMakeSymbolic(ExecutionState &state,
 			uniqueName = name + "_" + llvm::utostr(++id);
 		}
 		const Array *array = new Array(uniqueName, mo->size);
+#ifdef XQX_SAGE
+		ObjectState *newos = bindObjectInState(state, mo, false, array, os);
+		newos->print();
+#else
 		bindObjectInState(state, mo, false, array);
+#endif
 		state.addSymbolic(mo, array);
 
 		std::map< ExecutionState*, std::vector<SeedInfo> >::iterator it = 
@@ -4460,6 +4739,214 @@ void Executor::xRunFunction(Function *f)
 
 
 }
+
+#ifdef XQX_SAGE
+void Executor::executeCall(ExecutionState &state, 
+		KInstruction *ki,
+		Function *f,
+		std::vector< ref<Expr> > &arguments,
+		std::vector< ref<Expr> > &sd_arguments
+		) {
+
+
+#define XQX_DUMP_FUNCS
+#define XQX_DUMP_ARGS
+#ifdef XQX_DUMP_FUNCS
+	if( DumpFuncTrace )
+	{
+
+		std::string filename;
+		unsigned pos = ki->info->file.find_last_of("/\\");
+		filename = ki->info->file.substr(pos+1);
+
+		std::ostringstream info;
+		for( int i=0; i<state.stack.size(); i++) {
+			info << "|\t";
+		}
+		info << state.stack.size() << "|\t";
+		klee_record_func("%s-%s -- %s:%d:%d  s[%d]", info.str().c_str(), f->getName().str().c_str(), 
+				filename.c_str(), ki->info->line, ki->info->assemblyLine, state.id);
+#if 0
+		if( f->getName().str() == "open" && first) {
+			klee_xqx_debug("%s-%s -- %s:%d", info.str().c_str(), f->getName().str().c_str(), 
+					filename.c_str(), ki->info->line);
+			executeOpen = true;
+			first = false;
+
+		}
+#endif
+#ifdef XQX_DUMP_ARGS
+		std::ostringstream argsinfo;
+		for (unsigned j=0; j<arguments.size(); ++j)
+		{
+			ref<Expr> expr = state.constraints.simplifyExpr(arguments[j]);
+			argsinfo << "args[" << j << "]: " << expr << "\n";
+		}
+
+		klee_record_func("%s", argsinfo.str().c_str());
+#endif
+	}
+#endif
+ 
+
+	Instruction *i = ki->inst;
+	if (f && f->isDeclaration()) {
+		klee_xqx_debug("executeCall which is declaration, func = %s ", f->getName().data());
+		switch(f->getIntrinsicID()) {
+			case Intrinsic::not_intrinsic:
+				// state may be destroyed by this call, cannot touch
+				//klee_message("[xqx]: executeCall in Instrinisic, func = %s ", f->getName().data());
+				callExternalFunction(state, ki, f, arguments);
+				break;
+
+				// va_arg is handled by caller and intrinsic lowering, see comment for
+				// ExecutionState::varargs
+			case Intrinsic::vastart:  
+				{
+				//klee_message("[xqx]: executeCall in vastart, func = %s ", f->getName().data());
+					StackFrame &sf = state.stack.back();
+					assert(sf.varargs && 
+							"vastart called in function with no vararg object");
+
+					// FIXME: This is really specific to the architecture, not the pointer
+					// size. This happens to work fir x86-32 and x86-64, however.
+					Expr::Width WordSize = Context::get().getPointerWidth();
+					if (WordSize == Expr::Int32) {
+						executeMemoryOperation(state, true, arguments[0], 
+								sf.varargs->getBaseExpr(), 0);
+					} else {
+						assert(WordSize == Expr::Int64 && "Unknown word size!");
+
+						// X86-64 has quite complicated calling convention. However,
+						// instead of implementing it, we can do a simple hack: just
+						// make a function believe that all varargs are on stack.
+						executeMemoryOperation(state, true, arguments[0],
+								ConstantExpr::create(48, 32), 0); // gp_offset
+						executeMemoryOperation(state, true,
+								AddExpr::create(arguments[0], 
+									ConstantExpr::create(4, 64)),
+								ConstantExpr::create(304, 32), 0); // fp_offset
+						executeMemoryOperation(state, true,
+								AddExpr::create(arguments[0], 
+									ConstantExpr::create(8, 64)),
+								sf.varargs->getBaseExpr(), 0); // overflow_arg_area
+						executeMemoryOperation(state, true,
+								AddExpr::create(arguments[0], 
+									ConstantExpr::create(16, 64)),
+								ConstantExpr::create(0, 64), 0); // reg_save_area
+					}
+					break;
+				}
+			case Intrinsic::vaend:
+				// va_end is a noop for the interpreter.
+				//
+				// FIXME: We should validate that the target didn't do something bad
+				// with vaeend, however (like call it twice).
+				break;
+
+			case Intrinsic::vacopy:
+				// va_copy should have been lowered.
+				//
+				// FIXME: It would be nice to check for errors in the usage of this as
+				// well.
+			default:
+				klee_error("unknown intrinsic: %s", f->getName().data());
+		}
+
+		if (InvokeInst *ii = dyn_cast<InvokeInst>(i))
+			transferToBasicBlock(ii->getNormalDest(), i->getParent(), state);
+	}
+	else {
+		klee_xqx_debug("executeCall which is not declaration, func = %s ", f->getName().data());
+
+		// FIXME: I'm not really happy about this reliance on prevPC but it is ok, I
+		// guess. This just done to avoid having to pass KInstIterator everywhere
+		// instead of the actual instruction, since we can't make a KInstIterator
+		// from just an instruction (unlike LLVM).
+		KFunction *kf = kmodule->functionMap[f];
+		state.pushFrame(state.prevPC, kf);
+		state.pc = kf->instructions;
+
+		if (statsTracker)
+			statsTracker->framePushed(state, &state.stack[state.stack.size()-2]);
+
+		// TODO: support "byval" parameter attribute
+		// TODO: support zeroext, signext, sret attributes
+
+		unsigned callingArgs = arguments.size();
+		unsigned funcArgs = f->arg_size();
+		if (!f->isVarArg()) 
+		{
+			if (callingArgs > funcArgs) {
+				klee_warning_once(f, "calling %s with extra arguments.", 
+						f->getName().data());
+			} else if (callingArgs < funcArgs) {
+				terminateStateOnError(state, "calling function with too few arguments", 
+						"user.err");
+				return;
+			}
+		} 
+		else 
+		{
+			if (callingArgs < funcArgs) {
+				terminateStateOnError(state, "calling function with too few arguments", 
+						"user.err");
+				return;
+			}
+
+			StackFrame &sf = state.stack.back();
+			unsigned size = 0;
+			for (unsigned i = funcArgs; i < callingArgs; i++) {
+				// FIXME: This is really specific to the architecture, not the pointer
+				// size. This happens to work fir x86-32 and x86-64, however.
+				Expr::Width WordSize = Context::get().getPointerWidth();
+				if (WordSize == Expr::Int32) {
+					size += Expr::getMinBytesForWidth(arguments[i]->getWidth());
+				} else {
+					size += llvm::RoundUpToAlignment(arguments[i]->getWidth(), 
+							WordSize) / 8;
+				}
+			}
+
+			MemoryObject *mo = sf.varargs = memory->allocate(size, true, false, 
+					state.prevPC->inst);
+			if (!mo) {
+				terminateStateOnExecError(state, "out of memory (varargs)");
+				return;
+			}
+			ObjectState *os = bindObjectInState(state, mo, true);
+			unsigned offset = 0;
+			for (unsigned i = funcArgs; i < callingArgs; i++) {
+				// FIXME: This is really specific to the architecture, not the pointer
+				// size. This happens to work fir x86-32 and x86-64, however.
+				Expr::Width WordSize = Context::get().getPointerWidth();
+				if (WordSize == Expr::Int32) {
+					os->write(offset, arguments[i]);
+					offset += Expr::getMinBytesForWidth(arguments[i]->getWidth());
+				} else {
+					assert(WordSize == Expr::Int64 && "Unknown word size!");
+					os->write(offset, arguments[i]);
+					offset += llvm::RoundUpToAlignment(arguments[i]->getWidth(), 
+							WordSize) / 8;
+				}
+			}
+		}
+
+		unsigned numFormals = f->arg_size();
+		for (unsigned i=0; i<numFormals; ++i) {
+			bindArgument(kf, i, state, arguments[i]);
+			//arguments[i]->dump();
+#ifdef XQX_SAGE
+			//FIXME we not consider the varvarg function here.
+			bindArgumentConcolic(kf, i, state, sd_arguments[i]);
+#endif
+		}
+
+		klee_message("[xqx]: executeCall bindArgument %d args ", numFormals);
+	}
+}
+#endif 
+
 
 Interpreter *Interpreter::create(const InterpreterOptions &opts,
 		InterpreterHandler *ih) {

@@ -31,6 +31,7 @@
 #define XQX_RESOLVE_ADDR
 #define XQX_DEBUG_CONCOLIC
 #define XQX_DEBUG_SEED
+#define XQX_SAGE
 
 #include <stdio.h>
 

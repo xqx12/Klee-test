@@ -104,6 +104,9 @@ ObjectState::ObjectState(const MemoryObject *mo)
 	refCount(0),
 	object(mo),
 	concreteStore(new uint8_t[mo->size]),
+#ifdef XQX_SAGE
+	concolicStore(new uint8_t[mo->size]),
+#endif
 	concreteMask(0),
 	flushMask(0),
 	knownSymbolics(0),
@@ -118,6 +121,9 @@ ObjectState::ObjectState(const MemoryObject *mo)
 			updates = UpdateList(array, 0);
 		}
 		memset(concreteStore, 0, size);
+#ifdef XQX_SAGE
+		memset(concolicStore, 0, size);
+#endif
 	}
 
 
@@ -126,6 +132,9 @@ ObjectState::ObjectState(const MemoryObject *mo, const Array *array)
 	refCount(0),
 	object(mo),
 	concreteStore(new uint8_t[mo->size]),
+#ifdef XQX_SAGE
+	concolicStore(new uint8_t[mo->size]),
+#endif
 	concreteMask(0),
 	flushMask(0),
 	knownSymbolics(0),
@@ -135,6 +144,9 @@ ObjectState::ObjectState(const MemoryObject *mo, const Array *array)
 		mo->refCount++;
 		makeSymbolic();
 		memset(concreteStore, 0, size);
+#ifdef XQX_SAGE
+		memset(concolicStore, 0, size);
+#endif
 	}
 
 ObjectState::ObjectState(const ObjectState &os) 
@@ -142,6 +154,9 @@ ObjectState::ObjectState(const ObjectState &os)
 	refCount(0),
 	object(os.object),
 	concreteStore(new uint8_t[os.size]),
+#ifdef XQX_SAGE
+	concolicStore(new uint8_t[os.size]),
+#endif
 	concreteMask(os.concreteMask ? new BitArray(*os.concreteMask, os.size) : 0),
 	flushMask(os.flushMask ? new BitArray(*os.flushMask, os.size) : 0),
 	knownSymbolics(0),
@@ -159,6 +174,9 @@ ObjectState::ObjectState(const ObjectState &os)
 		}
 
 		memcpy(concreteStore, os.concreteStore, size*sizeof(*concreteStore));
+#ifdef XQX_SAGE
+		memcpy(concolicStore, os.concolicStore, size*sizeof(*concolicStore));
+#endif
 	}
 
 ObjectState::~ObjectState() {
@@ -166,6 +184,9 @@ ObjectState::~ObjectState() {
 	if (flushMask) delete flushMask;
 	if (knownSymbolics) delete[] knownSymbolics;
 	delete[] concreteStore;
+#ifdef XQX_SAGE
+	delete[] concolicStore;
+#endif
 
 	if (object)
 	{
@@ -244,6 +265,33 @@ void ObjectState::makeConcrete() {
 	flushMask = 0;
 	knownSymbolics = 0;
 }
+
+#ifdef XQX_SAGE
+void ObjectState::makeConcolic() const {
+	assert( concolicStore && "concolicStore not alloc");
+
+	if( concreteStore && concolicStore ) {
+		memcpy( concolicStore, concreteStore, size) ;
+		klee_xqx_debug("make concolic successfully.");
+	}
+	else 
+		std::cerr << "make concolic failed.\n";
+}
+
+void ObjectState::copyConcolic(const ObjectState* os) {
+	assert( os && "it must be a valiate ObjectState");
+	assert( os->size == size && "not equal size between ObjectStates");
+
+	if( os->concolicStore ) {
+		memcpy( concolicStore, os->concolicStore, size);
+		klee_xqx_debug("copy concolic successfully.");
+	}
+	else 
+		std::cerr << "copy concolic failed.\n";
+
+}
+#endif
+
 
 void ObjectState::makeSymbolic() {
 	assert(!updates.head &&
@@ -404,6 +452,29 @@ ref<Expr> ObjectState::read8(unsigned offset) const {
 	}    
 }
 
+ref<Expr> ObjectState::readConcrete8(unsigned offset) const {
+	//if (isByteConcrete(offset)) 
+		return ConstantExpr::create(concreteStore[offset], Expr::Int8);
+}
+
+#ifdef XQX_SAGE
+ref<Expr> ObjectState::readConcolic8(unsigned offset) const {
+	if (concolicStore) {
+		return ConstantExpr::create(concolicStore[offset], Expr::Int8);
+		//return concolicStore[offset];
+	}
+	else {
+		 assert( 0 && "read concolic failed.");
+	}
+}
+ref<Expr> ObjectState::readConcolic8(ref<Expr> offset) const {
+	if (ConstantExpr *CE = dyn_cast<ConstantExpr>(offset))
+		return readConcolic8(CE->getZExtValue(32));
+	else
+		assert(0 && "readConcolic offset is symbolic, FIXME");
+}
+#endif
+
 ref<Expr> ObjectState::read8(ref<Expr> offset) const {
 	assert(!isa<ConstantExpr>(offset) && "constant offset passed to symbolic read8");
 	unsigned base, size;
@@ -459,6 +530,83 @@ void ObjectState::write8(ref<Expr> offset, ref<Expr> value) {
 	updates.extend(ZExtExpr::create(offset, Expr::Int32), value);
 }
 
+#ifdef XQX_SAGE
+void ObjectState::writeConcolic(unsigned offset, ref<Expr> value) {
+	// Check for writes of constant values.
+	if (ConstantExpr *CE = dyn_cast<ConstantExpr>(value)) {
+		Expr::Width w = CE->getWidth();
+		if (w <= 64) {
+			uint64_t val = CE->getZExtValue();
+			switch (w) {
+				default: assert(0 && "Invalid write size!");
+				case  Expr::Bool:
+				case  Expr::Int8:  writeConcolic8(offset, val); return;
+				case Expr::Int16: writeConcolic16(offset, val); return;
+				case Expr::Int32: writeConcolic32(offset, val); return;
+				case Expr::Int64: writeConcolic64(offset, val); return;
+			}
+		}
+	}
+	assert(0 && "symbolic value when writeConcolic");
+}
+
+void ObjectState::writeConcolic(ref<Expr> offset, ref<Expr> value) {
+	// Truncate offset to 32-bits.
+	offset = ZExtExpr::create(offset, Expr::Int32);
+
+	// Check for writes at constant offsets.
+	if (ConstantExpr *CE = dyn_cast<ConstantExpr>(offset)) {
+		writeConcolic(CE->getZExtValue(32), value);
+		return;
+	}
+
+	assert(0 && "symbolic offset when writeConcolic");
+}
+
+void ObjectState::writeConcolic16(unsigned offset, uint16_t value) {
+	unsigned NumBytes = 2;
+	for (unsigned i = 0; i != NumBytes; ++i) {
+		unsigned idx = Context::get().isLittleEndian() ? i : (NumBytes - i - 1);
+		writeConcolic8(offset + idx, (uint8_t) (value >> (8 * i)));
+	}
+}
+
+void ObjectState::writeConcolic32(unsigned offset, uint32_t value) {
+	unsigned NumBytes = 4;
+	for (unsigned i = 0; i != NumBytes; ++i) {
+		unsigned idx = Context::get().isLittleEndian() ? i : (NumBytes - i - 1);
+		writeConcolic8(offset + idx, (uint8_t) (value >> (8 * i)));
+	}
+}
+
+void ObjectState::writeConcolic64(unsigned offset, uint64_t value) {
+	unsigned NumBytes = 8;
+	for (unsigned i = 0; i != NumBytes; ++i) {
+		unsigned idx = Context::get().isLittleEndian() ? i : (NumBytes - i - 1);
+		writeConcolic8(offset + idx, (uint8_t) (value >> (8 * i)));
+	}
+}
+
+
+void ObjectState::writeConcolic8(unsigned offset, uint8_t value) {
+	assert(concolicStore && "concolicStore is not exsit.");
+	concolicStore[offset] = value;
+}
+void ObjectState::writeConcolic8(unsigned offset, ref<Expr> value) {
+	// can happen when ExtractExpr special cases
+	if (ConstantExpr *CE = dyn_cast<ConstantExpr>(value)) {
+		writeConcolic8(offset, (uint8_t) CE->getZExtValue(8));
+	}
+	else
+		assert(0 && "writeConcolic a expr to offset");
+}
+void ObjectState::writeConcolic8(ref<Expr> offset, ref<Expr> value) {
+	assert(isa<ConstantExpr>(offset) && "symbolic offset passed to symbolic write8");
+	if (ConstantExpr *CE = dyn_cast<ConstantExpr>(offset))
+		return writeConcolic8(CE->getZExtValue(32),value);
+}
+
+#endif
 /***/
 
 ref<Expr> ObjectState::read(ref<Expr> offset, Expr::Width width) const {
@@ -500,6 +648,50 @@ ref<Expr> ObjectState::read(unsigned offset, Expr::Width width) const {
 	for (unsigned i = 0; i != NumBytes; ++i) {
 		unsigned idx = Context::get().isLittleEndian() ? i : (NumBytes - i - 1);
 		ref<Expr> Byte = read8(offset + idx);
+		Res = i ? ConcatExpr::create(Byte, Res) : Byte;
+	}
+
+	return Res;
+}
+
+ref<Expr> ObjectState::readConcolic(ref<Expr> offset, Expr::Width width) const {
+	// Truncate offset to 32-bits.
+	offset = ZExtExpr::create(offset, Expr::Int32);
+
+	// Check for reads at constant offsets.
+	if (ConstantExpr *CE = dyn_cast<ConstantExpr>(offset))
+		return readConcolic(CE->getZExtValue(32), width);
+
+	// Treat bool specially, it is the only non-byte sized write we allow.
+	if (width == Expr::Bool)
+		return ExtractExpr::create(readConcolic8(offset), 0, Expr::Bool);
+
+	// Otherwise, follow the slow general case.
+	unsigned NumBytes = width / 8;
+	assert(width == NumBytes * 8 && "Invalid write size!");
+	ref<Expr> Res(0);
+	for (unsigned i = 0; i != NumBytes; ++i) {
+		unsigned idx = Context::get().isLittleEndian() ? i : (NumBytes - i - 1);
+		ref<Expr> Byte = readConcolic8(AddExpr::create(offset, 
+					ConstantExpr::create(idx, 
+						Expr::Int32)));
+		Res = i ? ConcatExpr::create(Byte, Res) : Byte;
+	}
+
+	return Res;
+}
+ref<Expr> ObjectState::readConcolic(unsigned offset, Expr::Width width) const {
+	// Treat bool specially, it is the only non-byte sized write we allow.
+	if (width == Expr::Bool)
+		return ExtractExpr::create(readConcolic8(offset), 0, Expr::Bool);
+
+	// Otherwise, follow the slow general case.
+	unsigned NumBytes = width / 8;
+	assert(width == NumBytes * 8 && "Invalid write size!");
+	ref<Expr> Res(0);
+	for (unsigned i = 0; i != NumBytes; ++i) {
+		unsigned idx = Context::get().isLittleEndian() ? i : (NumBytes - i - 1);
+		ref<Expr> Byte = readConcolic8(offset + idx);
 		Res = i ? ConcatExpr::create(Byte, Res) : Byte;
 	}
 
@@ -599,7 +791,10 @@ void ObjectState::print() {
 	std::cerr << "\tBytes:\n";
 	for (unsigned i=0; i<size; i++) {
 		std::cerr << "\t\t["<<i<<"]"
-			<< " concrete? " << isByteConcrete(i)
+			<< " concrete? " << isByteConcrete(i) << "[" << readConcrete8(i) << "] "
+#ifdef XQX_SAGE
+			<< " concolic[" << readConcolic8(i) << "] "
+#endif
 			<< " known-sym? " << isByteKnownSymbolic(i)
 			<< " flushed? " << isByteFlushed(i) << " = ";
 		ref<Expr> e = read8(i);
@@ -621,7 +816,17 @@ void ObjectState::print() const {
 	std::cerr << "\tBytes:\n";
 	for (unsigned i=0; i<size; i++) {
 		std::cerr << "\t\t["<<i<<"]"
-			<< " concrete? " << isByteConcrete(i)
+#if 0
+			<< " concrete? " << isByteConcrete(i) << "[" << std::hex << (unsigned)readConcrete8(i) << "] "
+			//<< " concrete? " << isByteConcrete(i)
+#ifdef XQX_SAGE
+			<< " concolic[" << (unsigned)readConcolic8(i) << "] "
+#endif
+#endif
+			<< " concrete? " << isByteConcrete(i) << "[" << readConcrete8(i) << "] "
+#ifdef XQX_SAGE
+			<< " concolic[" << readConcolic8(i) << "] "
+#endif
 			<< " known-sym? " << isByteKnownSymbolic(i)
 			<< " flushed? " << isByteFlushed(i) << " = ";
 		ref<Expr> e = read8(i);

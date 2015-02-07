@@ -167,6 +167,12 @@ private:
   // mutable because we may need flush during read of const
   mutable UpdateList updates;
 
+  int test; //must be here, before the concolicStore ???
+#ifdef XQX_SAGE
+  //store the concrete bytes when make symbolic, in concolic(sage) mode
+  uint8_t *concolicStore;
+#endif
+
 public:
   unsigned size;
 
@@ -197,6 +203,28 @@ public:
   ref<Expr> read(ref<Expr> offset, Expr::Width width) const;
   ref<Expr> read(unsigned offset, Expr::Width width) const;
   ref<Expr> read8(unsigned offset) const;
+
+#ifdef XQX_SAGE
+  //addbyxqx201501
+  //uint8_t readConcrete8(unsigned offset) const;
+  //uint8_t readConcolic8(unsigned offset) const;
+  ref<Expr> readConcrete8(unsigned offset) const;
+  ref<Expr> readConcolic8(unsigned offset) const;
+  ref<Expr> readConcolic8(ref<Expr> offset) const;
+  void makeConcolic() const;
+  void copyConcolic(const ObjectState* os);
+  ref<Expr> readConcolic(ref<Expr> offset, Expr::Width width) const;
+  ref<Expr> readConcolic(unsigned offset, Expr::Width width) const;
+  
+  void writeConcolic8(unsigned offset, uint8_t value);
+  void writeConcolic8(unsigned offset, ref<Expr> value);
+  void writeConcolic8(ref<Expr> offset, ref<Expr> value);
+  void writeConcolic(unsigned offset, ref<Expr> value);
+  void writeConcolic(ref<Expr> offset, ref<Expr> value);
+  void writeConcolic16(unsigned offset, uint16_t value);
+  void writeConcolic32(unsigned offset, uint32_t value);
+  void writeConcolic64(unsigned offset, uint64_t value);
+#endif
 
   // return bytes written.
   void write(unsigned offset, ref<Expr> value);

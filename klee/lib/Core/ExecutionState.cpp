@@ -48,6 +48,11 @@ StackFrame::StackFrame(KInstIterator _caller, KFunction *_kf)
   : caller(_caller), kf(_kf), callPathNode(0), 
     minDistToUncoveredOnReturn(0), varargs(0) {
   locals = new Cell[kf->numRegisters];
+#ifdef XQX_SAGE
+  sd_locals =  new Cell[kf->numRegisters];
+  for(unsigned i=0; i<kf->numRegisters; i++)
+		sd_locals[i].value = ConstantExpr::create(0xCC, Expr::Int8);
+#endif
 }
 
 StackFrame::StackFrame(const StackFrame &s) 
@@ -60,10 +65,19 @@ StackFrame::StackFrame(const StackFrame &s)
   locals = new Cell[s.kf->numRegisters];
   for (unsigned i=0; i<s.kf->numRegisters; i++)
     locals[i] = s.locals[i];
+
+#ifdef XQX_SAGE
+  sd_locals =  new Cell[kf->numRegisters];
+  for (unsigned i=0; i<s.kf->numRegisters; i++)
+    sd_locals[i] = s.sd_locals[i];
+#endif
 }
 
 StackFrame::~StackFrame() { 
   delete[] locals; 
+#ifdef XQX_SAGE
+  delete[] sd_locals; 
+#endif
 }
 
 /***/

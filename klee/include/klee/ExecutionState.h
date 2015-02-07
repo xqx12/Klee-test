@@ -35,6 +35,7 @@ namespace klee {
 std::ostream &operator<<(std::ostream &os, const MemoryMap &mm);
 
 struct StackFrame {
+  
   KInstIterator caller;
   KFunction *kf;
   CallPathNode *callPathNode;
@@ -59,6 +60,13 @@ struct StackFrame {
   StackFrame(KInstIterator caller, KFunction *kf);
   StackFrame(const StackFrame &s);
   ~StackFrame();
+
+  //addbyxqx201501
+#ifdef XQX_SAGE
+  Cell *sd_locals; // shadow locals
+  MemoryObject *sd_varargs;
+#endif
+
 };
 
 class ExecutionState {

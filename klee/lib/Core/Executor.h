@@ -211,7 +211,11 @@ private:
                             std::vector< ref<Expr> > &arguments);
 
   ObjectState *bindObjectInState(ExecutionState &state, const MemoryObject *mo,
-                                 bool isLocal, const Array *array = 0);
+                                 bool isLocal, const Array *array = 0
+#ifdef XQX_SAGE
+								 , const ObjectState *old = 0
+#endif
+								 );
 
   /// Resolve a pointer to the memory objects it could point to the
   /// start of, forking execution when necessary and generating errors
@@ -273,7 +277,11 @@ private:
                               KInstruction *target /* undef if write */);
 
   void executeMakeSymbolic(ExecutionState &state, const MemoryObject *mo,
-                           const std::string &name);
+                           const std::string &name
+#ifdef XQX_SAGE
+						   , const ObjectState *os=0
+#endif
+						   );
 
   /// Create a new state where each input condition has been added as
   /// a constraint and return the results. The input state is included
@@ -301,6 +309,7 @@ private:
   const Cell& eval(KInstruction *ki, unsigned index, 
                    ExecutionState &state) const;
 
+
   Cell& getArgumentCell(ExecutionState &state,
                         KFunction *kf,
                         unsigned index) {
@@ -311,6 +320,40 @@ private:
                     KInstruction *target) {
     return state.stack.back().locals[target->dest];
   }
+#ifdef XQX_SAGE
+  Cell& getDestSDCell(ExecutionState &state,
+                    KInstruction *target) {
+    return state.stack.back().sd_locals[target->dest];
+  }
+  Cell& getArgumentSDCell(ExecutionState &state,
+                        KFunction *kf,
+                        unsigned index) {
+    return state.stack.back().sd_locals[kf->getArgRegister(index)];
+  }
+  void bindLocalConcolic(KInstruction *target, 
+                 ExecutionState &state, 
+                 ref<Expr> value);
+  void bindArgumentConcolic(KFunction *kf, 
+                    unsigned index,
+                    ExecutionState &state,
+                    ref<Expr> value);
+  const Cell& evalConcolic(KInstruction *ki, unsigned index, 
+                   ExecutionState &state) const;
+  void executeCall(ExecutionState &state, 
+                   KInstruction *ki,
+                   llvm::Function *f,
+                   std::vector< ref<Expr> > &arguments,
+				   std::vector< ref<Expr> > &sd_arguments );
+  void executeMemoryOperation(ExecutionState &state,
+		  bool isWrite,
+		  ref<Expr> address,
+		  ref<Expr> value /* undef if read */,
+		  KInstruction *target /* undef if write */,
+		  ref<Expr> conAddresss,
+		  ref<Expr> conValue) ;
+ 
+#endif
+
 
   void bindLocal(KInstruction *target, 
                  ExecutionState &state, 
