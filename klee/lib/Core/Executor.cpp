@@ -127,6 +127,7 @@ using namespace metaSMT::solver;
 
 
 static unsigned forknum = 0;
+static unsigned forknums = 0;
 //for print dbug info addbyxqx20140325
 //#undef XQX_DEBUG
 
@@ -1644,6 +1645,7 @@ static inline const llvm::fltSemantics * fpWidthToSemantics(unsigned width) {
 	}
 }
 
+
 void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 	Instruction *i = ki->inst;
 	//klee_message("[xqx]===exec inst=================");
@@ -1659,9 +1661,15 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				Instruction *caller = kcaller ? kcaller->inst : 0;
 				bool isVoidReturn = (ri->getNumOperands() == 0);
 				ref<Expr> result = ConstantExpr::alloc(0, Expr::Bool);
+#ifdef XQX_SAGE
+				ref<Expr> conResult = ConstantExpr::alloc(0, Expr::Bool);
+#endif
 
 				if (!isVoidReturn) {
 					result = eval(ki, 0, state).value;
+#ifdef XQX_SAGE
+					conResult = evalConcolic(ki, 0, state).value;
+#endif
 				}
 
 				if (state.stack.size() <= 1) {
@@ -1702,12 +1710,21 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 #endif
 								if (isSExt) {
 									result = SExtExpr::create(result, to);
+#ifdef XQX_SAGE
+									conResult = SExtExpr::create(conResult, to);
+#endif
 								} else {
 									result = ZExtExpr::create(result, to);
+#ifdef XQX_SAGE
+									conResult = ZExtExpr::create(conResult, to);
+#endif
 								}
 							}
 
 							bindLocal(kcaller, state, result);
+#ifdef XQX_SAGE
+							bindLocalConcolic(kcaller, state, conResult);
+#endif
 						}
 					} else {
 						// We check that the return value has no users instead of
@@ -1754,7 +1771,17 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 					assert(bi->getCondition() == bi->getOperand(0) &&
 							"Wrong operand index!");
 					ref<Expr> cond = eval(ki, 0, state).value;
+#ifdef XQX_SAGE
+					dumpPCAndCond(&state,cond);
+					ref<Expr> conCond = evalConcolic(ki, 0, state).value;
+					Executor::StatePair branches = fork(state, conCond, false);
+					klee_xqx_debug("condition dump ------------------");
+					cond->dump();
+					klee_xqx_debug("concondition dump ------------------");
+					conCond->dump();
+#else
 					Executor::StatePair branches = fork(state, cond, false);
+#endif
 
 					// NOTE: There is a hidden dependency here, markBranchVisited
 					// requires that we still be in the context of the branch
@@ -1776,6 +1803,10 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> cond = eval(ki, 0, state).value;
 				BasicBlock *bb = si->getParent();
 
+#ifdef XQX_SAGE
+				ref<Expr> conCond = evalConcolic(ki, 0, state).value;
+				cond = conCond;
+#endif
 				cond = toUnique(state, cond);
 				if (ConstantExpr *CE = dyn_cast<ConstantExpr>(cond)) {
 					// Somewhat gross to create these all the time, but fine till we
@@ -1887,6 +1918,13 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				sd_arguments.reserve(numArgs);
 				for (unsigned j=0; j<numArgs; ++j)
 					sd_arguments.push_back(evalConcolic(ki, j+1, state).value);
+
+				klee_xqx_debug("dump arguments and sd_arguemnts--");
+				for (unsigned j=0; j<numArgs; ++j)
+				{
+					arguments[j]->dump();
+					sd_arguments[j]->dump();
+				}
 #endif
 
 				if (f) {
@@ -1983,6 +2021,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				//klee_message("[xqx]: call func = %s ", f->getName().data());
 				//klee_message("[xqx]-------------------------------------");
 #ifdef XQX_SAGE
+								klee_xqx_debug("call function point??==");
 								executeCall(*res.first, ki, f, arguments, sd_arguments);
 #else
 								executeCall(*res.first, ki, f, arguments);
@@ -2006,10 +2045,22 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 			{
 #if LLVM_VERSION_CODE >= LLVM_VERSION(3, 0)
 				ref<Expr> result = eval(ki, state.incomingBBIndex, state).value;
+#ifdef XQX_SAGE
+				ref<Expr> conResult = evalConcolic(ki, state.incomingBBIndex, state).value;
+#endif
 #else
 				ref<Expr> result = eval(ki, state.incomingBBIndex * 2, state).value;
+#ifdef XQX_SAGE
+				ref<Expr> conResult = evalConcolic(ki, state.incomingBBIndex*2, state).value;
+#endif
 #endif
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				bindLocalConcolic(ki, state, conResult);
+				klee_xqx_debug("PHI result=======");
+				result->dump();
+				conResult->dump();
+#endif
 				break;
 			}
 
@@ -2024,6 +2075,13 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> fExpr = eval(ki, 2, state).value;
 				ref<Expr> result = SelectExpr::create(cond, tExpr, fExpr);
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> conCond = evalConcolic(ki, 0, state).value;
+				ref<Expr> contExpr = evalConcolic(ki, 1, state).value;
+				ref<Expr> confExpr = evalConcolic(ki, 2, state).value;
+				ref<Expr> conResult = SelectExpr::create(conCond, contExpr, confExpr);
+				bindLocalConcolic(ki, state, conResult);
+#endif
 				break;
 			}
 
@@ -2038,6 +2096,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> left = eval(ki, 0, state).value;
 				ref<Expr> right = eval(ki, 1, state).value;
 				bindLocal(ki, state, AddExpr::create(left, right));
+#ifdef XQX_SAGE
+				ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+				ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+				bindLocalConcolic(ki, state, AddExpr::create(conLeft, conRight));
+#endif
 				break;
 			}
 
@@ -2046,6 +2109,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> left = eval(ki, 0, state).value;
 				ref<Expr> right = eval(ki, 1, state).value;
 				bindLocal(ki, state, SubExpr::create(left, right));
+#ifdef XQX_SAGE
+				ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+				ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+				bindLocalConcolic(ki, state, SubExpr::create(conLeft, conRight));
+#endif
 				break;
 			}
 
@@ -2054,6 +2122,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> left = eval(ki, 0, state).value;
 				ref<Expr> right = eval(ki, 1, state).value;
 				bindLocal(ki, state, MulExpr::create(left, right));
+#ifdef XQX_SAGE
+				ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+				ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+				bindLocalConcolic(ki, state, MulExpr::create(conLeft, conRight));
+#endif
 				break;
 			}
 
@@ -2063,6 +2136,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> right = eval(ki, 1, state).value;
 				ref<Expr> result = UDivExpr::create(left, right);
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+				ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+				bindLocalConcolic(ki, state, UDivExpr::create(conLeft, conRight));
+#endif
 				break;
 			}
 
@@ -2072,6 +2150,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> right = eval(ki, 1, state).value;
 				ref<Expr> result = SDivExpr::create(left, right);
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+				ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+				bindLocalConcolic(ki, state, SDivExpr::create(conLeft, conRight));
+#endif
 				break;
 			}
 
@@ -2081,6 +2164,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> right = eval(ki, 1, state).value;
 				ref<Expr> result = URemExpr::create(left, right);
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+				ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+				bindLocalConcolic(ki, state, URemExpr::create(conLeft, conRight));
+#endif
 				break;
 			}
 
@@ -2090,6 +2178,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> right = eval(ki, 1, state).value;
 				ref<Expr> result = SRemExpr::create(left, right);
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+				ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+				bindLocalConcolic(ki, state, SRemExpr::create(conLeft, conRight));
+#endif
 				break;
 			}
 
@@ -2099,6 +2192,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> right = eval(ki, 1, state).value;
 				ref<Expr> result = AndExpr::create(left, right);
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+				ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+				bindLocalConcolic(ki, state, AndExpr::create(conLeft, conRight));
+#endif
 				break;
 			}
 
@@ -2108,6 +2206,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> right = eval(ki, 1, state).value;
 				ref<Expr> result = OrExpr::create(left, right);
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+				ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+				bindLocalConcolic(ki, state, OrExpr::create(conLeft, conRight));
+#endif
 				break;
 			}
 
@@ -2117,6 +2220,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> right = eval(ki, 1, state).value;
 				ref<Expr> result = XorExpr::create(left, right);
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+				ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+				bindLocalConcolic(ki, state, XorExpr::create(conLeft, conRight));
+#endif
 				break;
 			}
 
@@ -2126,6 +2234,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> right = eval(ki, 1, state).value;
 				ref<Expr> result = ShlExpr::create(left, right);
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+				ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+				bindLocalConcolic(ki, state, ShlExpr::create(conLeft, conRight));
+#endif
 				break;
 			}
 
@@ -2135,6 +2248,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> right = eval(ki, 1, state).value;
 				ref<Expr> result = LShrExpr::create(left, right);
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+				ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+				bindLocalConcolic(ki, state, LShrExpr::create(conLeft, conRight));
+#endif
 				break;
 			}
 
@@ -2144,6 +2262,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> right = eval(ki, 1, state).value;
 				ref<Expr> result = AShrExpr::create(left, right);
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+				ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+				bindLocalConcolic(ki, state, AShrExpr::create(conLeft, conRight));
+#endif
 				break;
 			}
 
@@ -2158,15 +2281,32 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				{
 					case ICmpInst::ICMP_EQ: 
 						{
+#ifdef XQX_SAGE
+							ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+							ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+							ref<Expr> conResult = EqExpr::create(conLeft, conRight);
+							bindLocalConcolic(ki, state, conResult);
+#endif
 							ref<Expr> left = eval(ki, 0, state).value;
 							ref<Expr> right = eval(ki, 1, state).value;
 							ref<Expr> result = EqExpr::create(left, right);
 							bindLocal(ki, state, result);
+#ifdef XQX_SAGE_DEBUG
+							klee_xqx_debug("icmp_eq ====");
+							result->dump();
+							conResult->dump();
+#endif
 							break;
 						}
 
 					case ICmpInst::ICMP_NE: 
 						{
+#ifdef XQX_SAGE
+							ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+							ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+							ref<Expr> conResult = NeExpr::create(conLeft, conRight);
+							bindLocalConcolic(ki, state, conResult);
+#endif
 							ref<Expr> left = eval(ki, 0, state).value;
 							ref<Expr> right = eval(ki, 1, state).value;
 							ref<Expr> result = NeExpr::create(left, right);
@@ -2176,6 +2316,12 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 					case ICmpInst::ICMP_UGT: 
 						{
+#ifdef XQX_SAGE
+							ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+							ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+							ref<Expr> conResult = UgtExpr::create(conLeft, conRight);
+							bindLocalConcolic(ki, state, conResult);
+#endif
 							ref<Expr> left = eval(ki, 0, state).value;
 							ref<Expr> right = eval(ki, 1, state).value;
 							ref<Expr> result = UgtExpr::create(left, right);
@@ -2185,6 +2331,12 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 					case ICmpInst::ICMP_UGE: 
 						{
+#ifdef XQX_SAGE
+							ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+							ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+							ref<Expr> conResult = UgeExpr::create(conLeft, conRight);
+							bindLocalConcolic(ki, state, conResult);
+#endif
 							ref<Expr> left = eval(ki, 0, state).value;
 							ref<Expr> right = eval(ki, 1, state).value;
 							ref<Expr> result = UgeExpr::create(left, right);
@@ -2194,6 +2346,12 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 					case ICmpInst::ICMP_ULT: 
 						{
+#ifdef XQX_SAGE
+							ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+							ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+							ref<Expr> conResult = UltExpr::create(conLeft, conRight);
+							bindLocalConcolic(ki, state, conResult);
+#endif
 							ref<Expr> left = eval(ki, 0, state).value;
 							ref<Expr> right = eval(ki, 1, state).value;
 							ref<Expr> result = UltExpr::create(left, right);
@@ -2203,6 +2361,12 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 					case ICmpInst::ICMP_ULE: 
 						{
+#ifdef XQX_SAGE
+							ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+							ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+							ref<Expr> conResult = UleExpr::create(conLeft, conRight);
+							bindLocalConcolic(ki, state, conResult);
+#endif
 							ref<Expr> left = eval(ki, 0, state).value;
 							ref<Expr> right = eval(ki, 1, state).value;
 							ref<Expr> result = UleExpr::create(left, right);
@@ -2212,6 +2376,12 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 					case ICmpInst::ICMP_SGT: 
 						{
+#ifdef XQX_SAGE
+							ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+							ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+							ref<Expr> conResult = SgtExpr::create(conLeft, conRight);
+							bindLocalConcolic(ki, state, conResult);
+#endif
 							ref<Expr> left = eval(ki, 0, state).value;
 							ref<Expr> right = eval(ki, 1, state).value;
 							ref<Expr> result = SgtExpr::create(left, right);
@@ -2221,6 +2391,12 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 					case ICmpInst::ICMP_SGE: 
 						{
+#ifdef XQX_SAGE
+							ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+							ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+							ref<Expr> conResult = SgeExpr::create(conLeft, conRight);
+							bindLocalConcolic(ki, state, conResult);
+#endif
 							ref<Expr> left = eval(ki, 0, state).value;
 							ref<Expr> right = eval(ki, 1, state).value;
 							ref<Expr> result = SgeExpr::create(left, right);
@@ -2230,6 +2406,12 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 					case ICmpInst::ICMP_SLT: 
 						{
+#ifdef XQX_SAGE
+							ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+							ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+							ref<Expr> conResult = SltExpr::create(conLeft, conRight);
+							bindLocalConcolic(ki, state, conResult);
+#endif
 							ref<Expr> left = eval(ki, 0, state).value;
 							ref<Expr> right = eval(ki, 1, state).value;
 							ref<Expr> result = SltExpr::create(left, right);
@@ -2239,6 +2421,12 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 					case ICmpInst::ICMP_SLE: 
 						{
+#ifdef XQX_SAGE
+							ref<Expr> conLeft = evalConcolic(ki, 0, state).value;
+							ref<Expr> conRight = evalConcolic(ki, 1, state).value;
+							ref<Expr> conResult = SleExpr::create(conLeft, conRight);
+							bindLocalConcolic(ki, state, conResult);
+#endif
 							ref<Expr> left = eval(ki, 0, state).value;
 							ref<Expr> right = eval(ki, 1, state).value;
 							ref<Expr> result = SleExpr::create(left, right);
@@ -2357,6 +2545,23 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 					base = AddExpr::create(base,
 							Expr::createPointer(kgepi->offset));
 				bindLocal(ki, state, base);
+
+#ifdef XQX_SAGE
+				ref<Expr> conBase = evalConcolic(ki, 0, state).value;
+				for (std::vector< std::pair<unsigned, uint64_t> >::iterator 
+						it = kgepi->indices.begin(), ie = kgepi->indices.end(); 
+						it != ie; ++it) {
+					uint64_t elementSize = it->second;
+					ref<Expr> conIndex = evalConcolic(ki, it->first, state).value;
+					conBase = AddExpr::create(conBase,
+							MulExpr::create(Expr::createSExtToPointerWidth(conIndex),
+								Expr::createPointer(elementSize)));
+				}
+				if (kgepi->offset)
+					conBase = AddExpr::create(conBase,
+							Expr::createPointer(kgepi->offset));
+				bindLocalConcolic(ki, state, conBase);
+#endif
 				break;
 			}
 
@@ -2368,6 +2573,12 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 						0,
 						getWidthForLLVMType(ci->getType()));
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> conResult = ExtractExpr::create(evalConcolic(ki, 0, state).value,
+						0,
+						getWidthForLLVMType(ci->getType()));
+				bindLocalConcolic(ki, state, conResult);
+#endif
 				break;
 			}
 		case Instruction::ZExt: 
@@ -2376,6 +2587,16 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> result = ZExtExpr::create(eval(ki, 0, state).value,
 						getWidthForLLVMType(ci->getType()));
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> conResult = ZExtExpr::create(evalConcolic(ki, 0, state).value,
+						getWidthForLLVMType(ci->getType()));
+				bindLocalConcolic(ki, state, conResult);
+#endif
+#ifdef XQX_SAGE_DEBUG
+				klee_xqx_debug("ZEXT====");
+				result->dump();
+				conResult->dump();
+#endif
 				break;
 			}
 		case Instruction::SExt: 
@@ -2384,6 +2605,11 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> result = SExtExpr::create(eval(ki, 0, state).value,
 						getWidthForLLVMType(ci->getType()));
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> conResult = SExtExpr::create(evalConcolic(ki, 0, state).value,
+						getWidthForLLVMType(ci->getType()));
+				bindLocalConcolic(ki, state, conResult);
+#endif
 				break;
 			}
 
@@ -2393,6 +2619,15 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				Expr::Width pType = getWidthForLLVMType(ci->getType());
 				ref<Expr> arg = eval(ki, 0, state).value;
 				bindLocal(ki, state, ZExtExpr::create(arg, pType));
+#ifdef XQX_SAGE
+				ref<Expr> conArg = evalConcolic(ki, 0, state).value;
+				bindLocalConcolic(ki, state, ZExtExpr::create(conArg, pType));
+#endif
+#ifdef XQX_SAGE_DEBUG
+				klee_xqx_debug("IntToPtr----");
+				arg->dump();
+				conArg->dump();
+#endif
 				break;
 			} 
 		case Instruction::PtrToInt: 
@@ -2401,6 +2636,10 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				Expr::Width iType = getWidthForLLVMType(ci->getType());
 				ref<Expr> arg = eval(ki, 0, state).value;
 				bindLocal(ki, state, ZExtExpr::create(arg, iType));
+#ifdef XQX_SAGE
+				ref<Expr> conArg = evalConcolic(ki, 0, state).value;
+				bindLocalConcolic(ki, state, ZExtExpr::create(conArg, iType));
+#endif
 				break;
 			}
 
@@ -2408,6 +2647,10 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 			{
 				ref<Expr> result = eval(ki, 0, state).value;
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				ref<Expr> conResult = evalConcolic(ki, 0, state).value;
+				bindLocalConcolic(ki, state, conResult);
+#endif
 				break;
 			}
 
@@ -2431,6 +2674,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				Res.add(APFloat(right->getAPValue()), APFloat::rmNearestTiesToEven);
 #endif
 				bindLocal(ki, state, ConstantExpr::alloc(Res.bitcastToAPInt()));
+#ifdef XQX_SAGE
+				klee_xqx_debug("FAdd Inst in SAGE Conoclic");
+#endif
 				break;
 			}
 
@@ -2451,6 +2697,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				Res.subtract(APFloat(right->getAPValue()), APFloat::rmNearestTiesToEven);
 #endif
 				bindLocal(ki, state, ConstantExpr::alloc(Res.bitcastToAPInt()));
+#ifdef XQX_SAGE
+				klee_xqx_debug("FSub Inst in SAGE Conoclic");
+#endif
 				break;
 			}
 
@@ -2472,6 +2721,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				Res.multiply(APFloat(right->getAPValue()), APFloat::rmNearestTiesToEven);
 #endif
 				bindLocal(ki, state, ConstantExpr::alloc(Res.bitcastToAPInt()));
+#ifdef XQX_SAGE
+				klee_xqx_debug("FMul Inst in SAGE Conoclic");
+#endif
 				break;
 			}
 
@@ -2493,6 +2745,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				Res.divide(APFloat(right->getAPValue()), APFloat::rmNearestTiesToEven);
 #endif
 				bindLocal(ki, state, ConstantExpr::alloc(Res.bitcastToAPInt()));
+#ifdef XQX_SAGE
+				klee_xqx_debug("FDiv Inst in SAGE Conoclic");
+#endif
 				break;
 			}
 
@@ -2513,6 +2768,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				Res.mod(APFloat(right->getAPValue()), APFloat::rmNearestTiesToEven);
 #endif
 				bindLocal(ki, state, ConstantExpr::alloc(Res.bitcastToAPInt()));
+#ifdef XQX_SAGE
+				klee_xqx_debug("FRem Inst in SAGE Conoclic");
+#endif
 				break;
 			}
 
@@ -2535,6 +2793,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 						llvm::APFloat::rmNearestTiesToEven,
 						&losesInfo);
 				bindLocal(ki, state, ConstantExpr::alloc(Res));
+#ifdef XQX_SAGE
+				klee_xqx_debug("FPTrunc Inst in SAGE Conoclic");
+#endif
 				break;
 			}
 
@@ -2556,6 +2817,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 						llvm::APFloat::rmNearestTiesToEven,
 						&losesInfo);
 				bindLocal(ki, state, ConstantExpr::alloc(Res));
+#ifdef XQX_SAGE
+				klee_xqx_debug("FPExt Inst in SAGE Conoclic");
+#endif
 				break;
 			}
 
@@ -2578,6 +2842,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				Arg.convertToInteger(&value, resultType, false,
 						llvm::APFloat::rmTowardZero, &isExact);
 				bindLocal(ki, state, ConstantExpr::alloc(value, resultType));
+#ifdef XQX_SAGE
+				klee_xqx_debug("FPToUI Inst in SAGE Conoclic");
+#endif
 				break;
 			}
 
@@ -2600,6 +2867,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				Arg.convertToInteger(&value, resultType, true,
 						llvm::APFloat::rmTowardZero, &isExact);
 				bindLocal(ki, state, ConstantExpr::alloc(value, resultType));
+#ifdef XQX_SAGE
+				klee_xqx_debug("FPToSI Inst in SAGE Conoclic");
+#endif
 				break;
 			}
 
@@ -2617,6 +2887,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 						llvm::APFloat::rmNearestTiesToEven);
 
 				bindLocal(ki, state, ConstantExpr::alloc(f));
+#ifdef XQX_SAGE
+				klee_xqx_debug("UIToFP Inst in SAGE Conoclic");
+#endif
 				break;
 			}
 
@@ -2634,6 +2907,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 						llvm::APFloat::rmNearestTiesToEven);
 
 				bindLocal(ki, state, ConstantExpr::alloc(f));
+#ifdef XQX_SAGE
+				klee_xqx_debug("SIToFP Inst in SAGE Conoclic");
+#endif
 				break;
 			}
 
@@ -2733,6 +3009,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				}
 
 				bindLocal(ki, state, ConstantExpr::alloc(Result, Expr::Bool));
+#ifdef XQX_SAGE
+				klee_xqx_debug("fcmp Inst in SAGE Conoclic");
+#endif
 				break;
 			}
 		case Instruction::InsertValue: 
@@ -2761,6 +3040,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 					result = val;
 
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				klee_xqx_debug("InsertValue Inst in SAGE Conoclic");
+#endif
 				break;
 			}
 		case Instruction::ExtractValue: 
@@ -2772,6 +3054,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				ref<Expr> result = ExtractExpr::create(agg, kgepi->offset*8, getWidthForLLVMType(i->getType()));
 
 				bindLocal(ki, state, result);
+#ifdef XQX_SAGE
+				klee_xqx_debug("ExtractValue Inst in SAGE Conoclic");
+#endif
 				break;
 			}
 
@@ -2880,6 +3165,9 @@ void Executor::bindModuleConstants() {
 void Executor::run(ExecutionState &initialState) {
 	bindModuleConstants();
 
+#ifdef XQX_SAGE
+	executeMakeConcolic(initialState);
+#endif
 	// Delay init till now so that ticks don't accrue during
 	// optimization and such.
 	initTimers();
@@ -3889,6 +4177,13 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 
 		ref<Expr> offset = mo->getOffsetExpr(address);
 		ref<Expr> conOffset = mo->getOffsetExpr(conAddress);
+#ifdef XQX_SAGE
+		klee_xqx_debug("----conAddress && conOffset----");
+		address->dump();
+		conAddress->dump();
+		offset->dump();
+		conOffset->dump();
+#endif
 
 		bool inBounds;
 		solver->setTimeout(coreSolverTimeout);
@@ -3914,6 +4209,9 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 					wos->write(offset, value);
 #ifdef XQX_SAGE
 					wos->writeConcolic(conOffset, conValue);
+					klee_xqx_debug("write value:");
+					value->dump();
+					conValue->dump();
 #endif
 #ifdef XQX_DEBUG_EXECUTE_MEM
 	klee_message("[xqx]--After Operate============================");
@@ -3934,6 +4232,9 @@ void Executor::executeMemoryOperation(ExecutionState &state,
 #ifdef XQX_SAGE
 				ref<Expr> concolicResult = os->readConcolic(conOffset, type);
 				bindLocalConcolic(target, state, concolicResult);
+				klee_xqx_debug("read value:");
+				result->dump();
+				concolicResult->dump();
 #endif
 
 #ifdef XQX_DEBUG_EXECUTE_MEM
@@ -4051,6 +4352,22 @@ Executor::readObjectAtAddress(ExecutionState &state, ref<Expr> addressExpr) {
 
 	return result;
 }
+
+#ifdef XQX_SAGE
+void Executor::executeMakeConcolic(ExecutionState &state) 
+{
+	state.addressSpace.copyInConcolics();
+	for (ExecutionState::stack_ty::const_reverse_iterator
+			it = state.stack.rbegin(), ie = state.stack.rend();
+			it != ie; ++it) {
+		const StackFrame &sf = *it;
+		for(int i=0; i<sf.kf->numRegisters; i++) {
+			sf.sd_locals[i] = sf.locals[i];
+		}
+
+	}
+}
+#endif
 
 void Executor::executeMakeSymbolic(ExecutionState &state, 
 		const MemoryObject *mo,
@@ -4812,14 +5129,21 @@ void Executor::executeCall(ExecutionState &state,
 					// size. This happens to work fir x86-32 and x86-64, however.
 					Expr::Width WordSize = Context::get().getPointerWidth();
 					if (WordSize == Expr::Int32) {
+#ifndef XQX_SAGE
 						executeMemoryOperation(state, true, arguments[0], 
 								sf.varargs->getBaseExpr(), 0);
+#else
+						executeMemoryOperation(state, true, arguments[0], 
+								sf.varargs->getBaseExpr(), 0, 
+								sd_arguments[0],sf.varargs->getBaseExpr());
+#endif
 					} else {
 						assert(WordSize == Expr::Int64 && "Unknown word size!");
 
 						// X86-64 has quite complicated calling convention. However,
 						// instead of implementing it, we can do a simple hack: just
 						// make a function believe that all varargs are on stack.
+#ifndef XQX_SAGE
 						executeMemoryOperation(state, true, arguments[0],
 								ConstantExpr::create(48, 32), 0); // gp_offset
 						executeMemoryOperation(state, true,
@@ -4834,6 +5158,33 @@ void Executor::executeCall(ExecutionState &state,
 								AddExpr::create(arguments[0], 
 									ConstantExpr::create(16, 64)),
 								ConstantExpr::create(0, 64), 0); // reg_save_area
+#else
+						executeMemoryOperation(state, true, arguments[0],
+								ConstantExpr::create(48, 32), 0, 
+								sd_arguments[0],ConstantExpr::create(48, 32)); // gp_offset
+						executeMemoryOperation(state, true,
+								AddExpr::create(arguments[0], 
+									ConstantExpr::create(4, 64)),
+								ConstantExpr::create(304, 32), 0,
+								AddExpr::create(sd_arguments[0], 
+									ConstantExpr::create(4, 64)),
+								ConstantExpr::create(304, 32)); // fp_offset
+						executeMemoryOperation(state, true,
+								AddExpr::create(arguments[0], 
+									ConstantExpr::create(8, 64)),
+								sf.varargs->getBaseExpr(), 0,
+								AddExpr::create(sd_arguments[0], 
+									ConstantExpr::create(8, 64)),
+								sf.varargs->getBaseExpr()); // overflow_arg_area
+						executeMemoryOperation(state, true,
+								AddExpr::create(arguments[0], 
+									ConstantExpr::create(16, 64)),
+								ConstantExpr::create(0, 64), 0,
+								AddExpr::create(sd_arguments[0], 
+									ConstantExpr::create(16, 64)),
+								ConstantExpr::create(0, 64)); // reg_save_area
+#endif
+
 					}
 					break;
 				}
@@ -4939,6 +5290,9 @@ void Executor::executeCall(ExecutionState &state,
 #ifdef XQX_SAGE
 			//FIXME we not consider the varvarg function here.
 			bindArgumentConcolic(kf, i, state, sd_arguments[i]);
+			klee_xqx_debug("---dump sd_arguments----");
+			arguments[i]->dump();
+			sd_arguments[i]->dump();
 #endif
 		}
 
@@ -4947,6 +5301,27 @@ void Executor::executeCall(ExecutionState &state,
 }
 #endif 
 
+void Executor::dumpPCAndCond(ExecutionState *s, ref<Expr> cond)
+{
+	std::ostringstream xinfo;
+	KInstruction *ki = s->prevPC;
+	Function *f = ki->inst->getParent()->getParent();
+	const InstructionInfo &ii = *ki->info;
+	if (ii.file != "")
+		xinfo << f->getName().str() << " - " << ii.file << ":" << ii.line << ":"  << ii.assemblyLine << ".\n";
+	else
+		xinfo << f->getName().str() << " - ::" << ii.assemblyLine << ".\n";
+
+
+	ExprPPrinter::printOne(xinfo, "\n\ncondition", cond);
+	std::string constraints;
+	getConstraintLog(*s, constraints,Interpreter::KQUERY);
+	std::ostream *file = interpreterHandler->openTestFile("cond", forknums++);
+	*file << constraints;
+	*file << xinfo.str();
+	delete file;
+
+}
 
 Interpreter *Interpreter::create(const InterpreterOptions &opts,
 		InterpreterHandler *ih) {

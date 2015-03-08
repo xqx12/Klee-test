@@ -464,6 +464,7 @@ ref<Expr> ObjectState::readConcolic8(unsigned offset) const {
 		//return concolicStore[offset];
 	}
 	else {
+		klee_xqx_debug("concolicStore is NULL, read concolic failed. ");
 		 assert( 0 && "read concolic failed.");
 	}
 }
@@ -653,7 +654,7 @@ ref<Expr> ObjectState::read(unsigned offset, Expr::Width width) const {
 
 	return Res;
 }
-
+#ifdef XQX_SAGE
 ref<Expr> ObjectState::readConcolic(ref<Expr> offset, Expr::Width width) const {
 	// Truncate offset to 32-bits.
 	offset = ZExtExpr::create(offset, Expr::Int32);
@@ -697,6 +698,7 @@ ref<Expr> ObjectState::readConcolic(unsigned offset, Expr::Width width) const {
 
 	return Res;
 }
+#endif
 
 void ObjectState::write(ref<Expr> offset, ref<Expr> value) {
 	// Truncate offset to 32-bits.

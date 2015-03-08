@@ -321,6 +321,7 @@ private:
     return state.stack.back().locals[target->dest];
   }
 #ifdef XQX_SAGE
+  void executeMakeConcolic(ExecutionState &state) ;
   Cell& getDestSDCell(ExecutionState &state,
                     KInstruction *target) {
     return state.stack.back().sd_locals[target->dest];
@@ -526,6 +527,8 @@ public:
 
   // for concrete data byxqx
   std::vector<unsigned char> readObjectAtAddress(ExecutionState &state, ref<Expr> addressExpr);
+
+  void dumpPCAndCond(ExecutionState *s, ref<Expr> cond);
 };
   
 } // End klee namespace

@@ -40,6 +40,7 @@ public:
 
   virtual std::string getOutputFilename(const std::string &filename) = 0;
   virtual std::ostream *openOutputFile(const std::string &filename) = 0;
+  virtual std::ostream *openTestFile(const std::string &suffix, unsigned id)=0;
 
   virtual void incPathsExplored() = 0;
 

@@ -763,7 +763,8 @@ void SpecialFunctionHandler::handleMakeSymbolic(ExecutionState &state,
     if (res) {
 #ifdef XQX_SAGE
 		klee_xqx_debug("print os makesymbolic");
-		old->makeConcolic();
+		//old->makeConcolic();
+		executor.executeMakeConcolic(*s);
       executor.executeMakeSymbolic(*s, mo, name, old);
 #else
       executor.executeMakeSymbolic(*s, mo, name);

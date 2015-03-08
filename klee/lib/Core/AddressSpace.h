@@ -10,6 +10,7 @@
 #ifndef KLEE_ADDRESSSPACE_H
 #define KLEE_ADDRESSSPACE_H
 
+#include "Common.h"
 #include "ObjectHolder.h"
 
 #include "klee/Expr.h"
@@ -125,6 +126,9 @@ namespace klee {
     /// \retval true The copy succeeded. 
     /// \retval false The copy failed because a read-only object was modified.
     bool copyInConcretes();
+#ifdef XQX_SAGE
+	bool copyInConcolics();
+#endif
   };
 } // End klee namespace
 

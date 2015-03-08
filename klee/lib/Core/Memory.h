@@ -204,11 +204,11 @@ public:
   ref<Expr> read(unsigned offset, Expr::Width width) const;
   ref<Expr> read8(unsigned offset) const;
 
+  ref<Expr> readConcrete8(unsigned offset) const;
 #ifdef XQX_SAGE
   //addbyxqx201501
   //uint8_t readConcrete8(unsigned offset) const;
   //uint8_t readConcolic8(unsigned offset) const;
-  ref<Expr> readConcrete8(unsigned offset) const;
   ref<Expr> readConcolic8(unsigned offset) const;
   ref<Expr> readConcolic8(ref<Expr> offset) const;
   void makeConcolic() const;

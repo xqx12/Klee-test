@@ -345,6 +345,20 @@ bool AddressSpace::copyInConcretes() {
 	return true;
 }
 
+#ifdef XQX_SAGE
+bool AddressSpace::copyInConcolics() {
+	for (MemoryMap::iterator it = objects.begin(), ie = objects.end(); 
+			it != ie; ++it) {
+		const MemoryObject *mo = it->first;
+		const ObjectState *os = it->second;
+		if(os->concolicStore && os->concreteStore) {
+			memcpy(os->concolicStore, os->concreteStore, os->size);
+		}
+	}
+
+	return true;
+}
+#endif
 /***/
 
 bool MemoryObjectLT::operator()(const MemoryObject *a, const MemoryObject *b) const {

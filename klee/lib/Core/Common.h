@@ -25,13 +25,14 @@
 #define XQX_DEBUG_SHOW_EACH_FORK
 //#define XQX_DEBUG_FORK_DUMP_STACK
 //#define XQX_DEBUG_PRINT_RANGE
-#define XQX_DEBUG_EXECUTE_MEM  
+//#define XQX_DEBUG_EXECUTE_MEM  
 #define XQX_CMA_CHECK
 #define XQX_CONCRETE_EXEC
 #define XQX_RESOLVE_ADDR
 #define XQX_DEBUG_CONCOLIC
 #define XQX_DEBUG_SEED
 #define XQX_SAGE
+#define XQX_SAGE_DEBUG
 
 #include <stdio.h>
 
